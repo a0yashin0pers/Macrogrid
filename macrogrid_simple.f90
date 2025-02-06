@@ -4,7 +4,7 @@ program macrogrid_solver
     ! === ПАРАМЕТРЫ ДЛЯ ТЕСТИРОВАНИЯ ===
     ! Логический флаг: суммировать ли ошибку SOR по всем подобластям
     ! при вычислении нормы на интерфейсах
-    logical :: accumulate_subgrid_error
+    logical :: accumulate_subgrid_error = .false.
 
     ! Возможные размеры подсеток (только первые 5 из исходного массива)
     integer, parameter :: N_SIZES = 5
@@ -24,8 +24,8 @@ program macrogrid_solver
     integer, dimension(2, N_CONFIGS), parameter :: macrogrid_configs = reshape([ &
          1, 1,  &  ! 1x1
          2, 1,  &  ! 2x1
-         4, 2,  &  ! 4x2
-         2, 2   &  ! 2x2
+         2, 2,   &  ! 2x2
+         4, 2  &  ! 4x2
          ], shape=[2, N_CONFIGS])
 
     ! Параметры итераций и точности
@@ -39,54 +39,48 @@ program macrogrid_solver
 
     ! Локальные переменные для цикла тестов
     integer :: i_cfg, i_size, sub_sz
-    integer :: i        ! счётчик
     real*8  :: omega
     integer :: cfg_x, cfg_y
 
     print *, "=== Запуск тестов для различных макросеток и подсеток ==="
+    print *, ""
+    print *, "-----------------------------------------------"
+    print *, "accumulate_subgrid_error = ", accumulate_subgrid_error
+    print *, "-----------------------------------------------"
 
-    ! ДВА цикла: accumulate_subgrid_error = .true. и .false.
-    do i = 1, 2
-        accumulate_subgrid_error = (i == 1)
+    ! Перебираем все варианты макросетки
+    do i_cfg = 1, N_CONFIGS
+        cfg_x = macrogrid_configs(1, i_cfg)
+        cfg_y = macrogrid_configs(2, i_cfg)
+
         print *, ""
-        print *, "-----------------------------------------------"
-        print *, "accumulate_subgrid_error = ", accumulate_subgrid_error
-        print *, "-----------------------------------------------"
+        print *, "=== Macrogrid size: ", cfg_x, " x ", cfg_y, " ==="
 
-        ! Перебираем все варианты макросетки
-        do i_cfg = 1, N_CONFIGS
-            cfg_x = macrogrid_configs(1, i_cfg)
-            cfg_y = macrogrid_configs(2, i_cfg)
+        ! Перебираем все нужные размеры подсеток
+        do i_size = 1, N_SIZES
+            sub_sz = subgrid_sizes(i_size)
 
-            print *, ""
-            print *, "=== Macrogrid size: ", cfg_x, " x ", cfg_y, " ==="
+            print *, "  Subgrid size =", sub_sz
 
-            ! Перебираем все нужные размеры подсеток
-            do i_size = 1, N_SIZES
-                sub_sz = subgrid_sizes(i_size)
+            ! Сначала решаем "constant boundary" задачу
+            omega = factors_const(i_size)
+            call initialize_constant_boundary(macrogrid, cfg_x, cfg_y, sub_sz)
+            call measure_execution_time(accumulate_subgrid_error,             &
+                                        macrogrid, cfg_x, cfg_y, sub_sz,      &
+                                        omega,                                &
+                                        max_iter_subgrid, max_iter_interface, &
+                                        eps_subgrid, eps_interface)
+            call compute_constant_boundary_error(macrogrid, cfg_x, cfg_y, sub_sz)
 
-                print *, "  Subgrid size =", sub_sz
-
-                ! Сначала решаем "constant boundary" задачу
-                omega = factors_const(i_size)
-                call initialize_constant_boundary(macrogrid, cfg_x, cfg_y, sub_sz)
-                call measure_execution_time(accumulate_subgrid_error,             &
-                                            macrogrid, cfg_x, cfg_y, sub_sz,      &
-                                            omega,                                &
-                                            max_iter_subgrid, max_iter_interface, &
-                                            eps_subgrid, eps_interface)
-                call compute_constant_boundary_error(macrogrid, cfg_x, cfg_y, sub_sz)
-
-                ! Теперь решаем "logarithmic boundary"
-                omega = factors_log(i_size)
-                call initialize_logarithmic_boundary(macrogrid, cfg_x, cfg_y, sub_sz)
-                call measure_execution_time(accumulate_subgrid_error,             &
-                                            macrogrid, cfg_x, cfg_y, sub_sz,      &
-                                            omega,                                &
-                                            max_iter_subgrid, max_iter_interface, &
-                                            eps_subgrid, eps_interface)
-                call compute_logarithmic_boundary_error(macrogrid, cfg_x, cfg_y, sub_sz)
-            end do
+            ! Теперь решаем "logarithmic boundary"
+            omega = factors_log(i_size)
+            call initialize_logarithmic_boundary(macrogrid, cfg_x, cfg_y, sub_sz)
+            call measure_execution_time(accumulate_subgrid_error,             &
+                                        macrogrid, cfg_x, cfg_y, sub_sz,      &
+                                        omega,                                &
+                                        max_iter_subgrid, max_iter_interface, &
+                                        eps_subgrid, eps_interface)
+            call compute_logarithmic_boundary_error(macrogrid, cfg_x, cfg_y, sub_sz)
         end do
     end do
 
