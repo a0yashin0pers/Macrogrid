@@ -10,12 +10,12 @@ program macrogrid_solver
     integer, parameter :: N_SIZES = 5
     integer, dimension(N_SIZES), parameter :: subgrid_sizes = [10, 18, 34, 66, 130]
 
-    ! Оптимальные факторы релаксации для "ones" (соответствуют subgrid_sizes выше)
-    real*8, dimension(N_SIZES), parameter :: factors =      &
+    ! Оптимальные факторы релаксации (omega) для "constant boundary" (соответствуют subgrid_sizes выше)
+    real*8, dimension(N_SIZES), parameter :: factors_const =      &
          [1.52729d0, 1.69504d0, 1.82964d0, 1.90932d0, 1.95305d0]
 
-    ! Оптимальные факторы релаксации для "hard"
-    real*8, dimension(N_SIZES), parameter :: factors_hard = &
+    ! Оптимальные факторы релаксации для "logarithmic boundary"
+    real*8, dimension(N_SIZES), parameter :: factors_log = &
          [1.52129d0, 1.69524d0, 1.82919d0, 1.90899d0, 1.95307d0]
 
     ! Макросеточные размеры, которые мы хотим протестировать:
@@ -31,13 +31,13 @@ program macrogrid_solver
     ! Параметры итераций и точности
     integer, parameter :: max_iter_subgrid    = 100000   ! максимум итераций SOR в подобласти
     integer, parameter :: max_iter_interface  = 100000   ! максимум итераций интерфейсной итерации
-    real*8,  parameter :: eps_subgrid         = 1.0d-10  ! точность для SOR внутри подобластей
+    real*8,  parameter :: eps_subgrid         = 1.0d-5   ! точность для SOR внутри подобластей
     real*8,  parameter :: eps_interface       = 1.0d-5   ! точность для итерации на интерфейсе
 
     ! Большой массив для макросетки (запас по размеру)
     real*8 :: macrogrid(10, 10, 1026, 1026)
 
-    ! Локальные переменные
+    ! Локальные переменные для цикла тестов
     integer :: i_cfg, i_size, sub_sz
     integer :: i        ! счётчик
     real*8  :: omega
@@ -67,26 +67,25 @@ program macrogrid_solver
 
                 print *, "  Subgrid size =", sub_sz
 
-                ! Возьмём соответствующие омеги для ones и hard
-                omega = factors(i_size)
-                ! Сначала решаем "ones task"
-                call initialize_macrogrid_ones(macrogrid, cfg_x, cfg_y, sub_sz)
-                call measure_time(accumulate_subgrid_error,              &
-                                  macrogrid, cfg_x, cfg_y, sub_sz,        &
-                                  omega,                                  &
-                                  max_iter_subgrid, max_iter_interface,   &
-                                  eps_subgrid, eps_interface)
-                call compute_error(macrogrid, cfg_x, cfg_y, sub_sz)
+                ! Сначала решаем "constant boundary" задачу
+                omega = factors_const(i_size)
+                call initialize_constant_boundary(macrogrid, cfg_x, cfg_y, sub_sz)
+                call measure_execution_time(accumulate_subgrid_error,             &
+                                            macrogrid, cfg_x, cfg_y, sub_sz,      &
+                                            omega,                                &
+                                            max_iter_subgrid, max_iter_interface, &
+                                            eps_subgrid, eps_interface)
+                call compute_constant_boundary_error(macrogrid, cfg_x, cfg_y, sub_sz)
 
-                ! Теперь решаем "hard task"
-                omega = factors_hard(i_size)
-                call initialize_hard_macrogrid(macrogrid, cfg_x, cfg_y, sub_sz)
-                call measure_time(accumulate_subgrid_error,              &
-                                  macrogrid, cfg_x, cfg_y, sub_sz,        &
-                                  omega,                                  &
-                                  max_iter_subgrid, max_iter_interface,   &
-                                  eps_subgrid, eps_interface)
-                call compute_hard_error(macrogrid, cfg_x, cfg_y, sub_sz)
+                ! Теперь решаем "logarithmic boundary"
+                omega = factors_log(i_size)
+                call initialize_logarithmic_boundary(macrogrid, cfg_x, cfg_y, sub_sz)
+                call measure_execution_time(accumulate_subgrid_error,             &
+                                            macrogrid, cfg_x, cfg_y, sub_sz,      &
+                                            omega,                                &
+                                            max_iter_subgrid, max_iter_interface, &
+                                            eps_subgrid, eps_interface)
+                call compute_logarithmic_boundary_error(macrogrid, cfg_x, cfg_y, sub_sz)
             end do
         end do
     end do
@@ -94,9 +93,35 @@ program macrogrid_solver
 contains
 
     !-----------------------------------------------------------------------
-    ! ИНИЦИАЛИЗАЦИЯ: "ЕДИНИЧКИ" НА ГРАНИЦАХ
+    ! ФУНКЦИИ ВЫЧИСЛЕНИЯ ШАГОВ СЕТКИ ДЛЯ ЗАДАННЫХ ПАРАМЕТРОВ
     !-----------------------------------------------------------------------
-    subroutine initialize_macrogrid_ones(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
+    ! Предполагаем, что область [0,1] x [0,1].
+    ! Тогда global_size_x = macrogrid_size_x*subgrid_size - (macrogrid_size_x - 1)
+    ! dx = 1.0 / (global_size_x - 1)
+    !
+    ! Аналогично по y.
+
+    real*8 function compute_dx(macrogrid_size_x, subgrid_size) result(dx)
+        implicit none
+        integer, intent(in) :: macrogrid_size_x, subgrid_size
+        integer :: global_size_x
+        global_size_x = macrogrid_size_x*subgrid_size - (macrogrid_size_x - 1)
+        dx = 1.0d0 / dble(global_size_x - 1)
+    end function compute_dx
+
+    real*8 function compute_dy(macrogrid_size_y, subgrid_size) result(dy)
+        implicit none
+        integer, intent(in) :: macrogrid_size_y, subgrid_size
+        integer :: global_size_y
+        global_size_y = macrogrid_size_y*subgrid_size - (macrogrid_size_y - 1)
+        dy = 1.0d0 / dble(global_size_y - 1)
+    end function compute_dy
+
+
+    !-----------------------------------------------------------------------
+    ! ИНИЦИАЛИЗАЦИЯ: "КОНСТАНТНЫЕ" ГРАНИЧНЫЕ УСЛОВИЯ (раньше ones)
+    !-----------------------------------------------------------------------
+    subroutine initialize_constant_boundary(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
         implicit none
         integer, intent(in) :: macrogrid_size_x, macrogrid_size_y, subgrid_size
         real*8,  intent(inout) :: macrogrid(macrogrid_size_x,macrogrid_size_y,subgrid_size,subgrid_size)
@@ -124,13 +149,13 @@ contains
                 end do
             end do
         end do
-    end subroutine initialize_macrogrid_ones
+    end subroutine initialize_constant_boundary
 
 
     !-----------------------------------------------------------------------
     ! ИНИЦИАЛИЗАЦИЯ: "ЛОГАРИФМИЧЕСКИЕ" ГРАНИЧНЫЕ УСЛОВИЯ
     !-----------------------------------------------------------------------
-    subroutine initialize_hard_macrogrid(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
+    subroutine initialize_logarithmic_boundary(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
         implicit none
         real*8, parameter :: R1 = 0.1d0, R2 = 1.0d0
         real*8, parameter :: x_min = 0.3d0, y_min = 0.0d0
@@ -167,155 +192,170 @@ contains
                 end do
             end do
         end do
-    end subroutine initialize_hard_macrogrid
+    end subroutine initialize_logarithmic_boundary
 
 
     !-----------------------------------------------------------------------
-    ! ПРОЦЕДУРА МЕТОДА SOR В ОДНОЙ ПОДОБЛАСТИ (n x n)
+    ! МЕТОД SOR ДЛЯ ПОДОБЛАСТИ (n x n) С УЧЁТОМ dx, dy
     !-----------------------------------------------------------------------
-    subroutine solve_sor_subdomain(u, n, omega, eps_sor, max_iter_sor, out_error)
+    subroutine solve_sor_subdomain(u, n, factor, eps, max_iter, iter_error, dx, dy)
         implicit none
-        integer, intent(in) :: n, max_iter_sor
-        real*8,  intent(in) :: omega, eps_sor
+        integer, intent(in) :: n, max_iter
+        real*8,  intent(in) :: factor, eps, dx, dy
         real*8,  intent(inout) :: u(n*n)
-        real*8,  intent(out)   :: out_error
+        real*8,  intent(out)   :: iter_error
+
+        ! Для уравнения Laplacian(u) = 0 с разными шагами:
+        ! u_new(i) = u_old(i) + factor * [ ( (uL+uR)/dx^2 + (uD+uU)/dy^2 ) / (2/dx^2 + 2/dy^2 ) - u_old(i) ]
 
         integer :: iter, ix, iy, idx
-        real*8  :: old_val, sum_diff
+        real*8  :: sum_diff, u_old, denom, tmp
+        real*8  :: invdx2, invdy2
 
-        do iter = 1, max_iter_sor
+        invdx2 = 1.0d0/(dx*dx)
+        invdy2 = 1.0d0/(dy*dy)
+        denom  = 2.0d0*invdx2 + 2.0d0*invdy2    ! знаменатель в формуле Лапласа
+
+        do iter = 1, max_iter
             sum_diff = 0.0d0
 
             do iy = 2, n-1
                 do ix = 2, n-1
-                    idx     = ix + (iy-1)*n
-                    old_val = u(idx)
-                    ! 5-точечный лапласиан
-                    u(idx)  = old_val + omega*0.25d0*( u(idx-1) + u(idx+1) + &
-                                                      u(idx-n) + u(idx+n) - 4.0d0*old_val )
-                    sum_diff = sum_diff + dabs(u(idx) - old_val)
+                    idx    = ix + (iy-1)*n
+                    u_old  = u(idx)
+
+                    tmp = ( (u(idx-1) + u(idx+1))*invdx2 + &
+                            (u(idx-n) + u(idx+n))*invdy2 ) / denom
+
+                    ! SOR обновление
+                    u(idx) = u_old + factor*(tmp - u_old)
+
+                    sum_diff = sum_diff + dabs(u(idx) - u_old)
                 end do
             end do
 
-            if (sum_diff < eps_sor) then
-                out_error = sum_diff
+            if (sum_diff < eps) then
+                iter_error = sum_diff
                 return
             end if
         end do
 
-        out_error = sum_diff
+        iter_error = sum_diff
     end subroutine solve_sor_subdomain
 
 
     !-----------------------------------------------------------------------
-    ! КОПИРОВАНИЕ subgrid(n,n) В 1D u(n*n)
+    ! ОБНОВЛЕНИЕ УЗЛОВ НА ИНТЕРФЕЙСАХ (ПРОСТАЯ ИТЕРАЦИЯ С УЧЁТОМ dx, dy)
     !-----------------------------------------------------------------------
-    subroutine copy_in_subgrid(block_2d, local_u, n)
-        implicit none
-        integer, intent(in) :: n
-        real*8,  intent(in) :: block_2d(n,n)
-        real*8,  intent(out):: local_u(n*n)
-
-        integer :: ix, iy, idx
-
-        do iy = 1, n
-            do ix = 1, n
-                idx          = ix + (iy-1)*n
-                local_u(idx) = block_2d(ix, iy)
-            end do
-        end do
-    end subroutine copy_in_subgrid
-
-
-    !-----------------------------------------------------------------------
-    ! КОПИРОВАНИЕ ОБРАТНО: ИЗ 1D u(n*n) В block_2d(n,n)
-    !-----------------------------------------------------------------------
-    subroutine copy_out_subgrid(block_2d, local_u, n)
-        implicit none
-        integer, intent(in) :: n
-        real*8,  intent(in) :: local_u(n*n)
-        real*8,  intent(inout):: block_2d(n,n)
-
-        integer :: ix, iy, idx
-
-        do iy = 1, n
-            do ix = 1, n
-                idx                = ix + (iy-1)*n
-                block_2d(ix, iy)   = local_u(idx)
-            end do
-        end do
-    end subroutine copy_out_subgrid
-
-
-    !-----------------------------------------------------------------------
-    ! ОБНОВЛЕНИЕ УЗЛОВ НА ГРАНИЦАХ (ПРОСТАЯ ИТЕРАЦИЯ)
-    !-----------------------------------------------------------------------
-    subroutine update_boundaries(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, out_norm)
+    subroutine update_interfaces(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, out_norm)
         implicit none
         integer, intent(in) :: macrogrid_size_x, macrogrid_size_y, subgrid_size
         real*8,  intent(inout) :: macrogrid(macrogrid_size_x,macrogrid_size_y,subgrid_size,subgrid_size)
         real*8,  intent(out)   :: out_norm
 
+        ! Аналогичная логика: точка на границе — это узел,
+        ! для которого решение берём из аппроксимации Лапласиана = 0
+        ! с учётом dx, dy.
+
         integer :: iX, iY, k
-        real*8  :: old_value, avg
+        integer :: global_size_x, global_size_y
+        real*8  :: dx, dy
+        real*8  :: invdx2, invdy2, denom
+        real*8  :: old_value, new_val
+
+        ! Вычислим "глобальные" dx, dy (предполагаем, что шаг везде одинаковый
+        ! и не зависит от самого iX/iY — т.е. вся область [0,1], просто разбитая
+        ! на блоки)
+        global_size_x = macrogrid_size_x*subgrid_size - (macrogrid_size_x - 1)
+        global_size_y = macrogrid_size_y*subgrid_size - (macrogrid_size_y - 1)
+        dx = 1.0d0 / dble(global_size_x - 1)
+        dy = 1.0d0 / dble(global_size_y - 1)
+
+        invdx2 = 1.0d0/(dx*dx)
+        invdy2 = 1.0d0/(dy*dy)
+        denom  = 2.0d0*invdx2 + 2.0d0*invdy2
 
         out_norm = 0.0d0
 
-        ! Горизонтальные границы между (iY) и (iY+1)
+        ! -- Горизонтальные границы (между iY и iY+1)
         do iX = 1, macrogrid_size_x
             do iY = 1, macrogrid_size_y - 1
                 do k = 2, subgrid_size - 1
-                    old_value = macrogrid(iX, iY, k, subgrid_size)
-                    avg = ( 4.0d0*macrogrid(iX, iY,   k, subgrid_size-1) + &
-                            4.0d0*macrogrid(iX, iY+1, k, 2)               - &
-                            macrogrid(iX, iY,   k, subgrid_size-2)        - &
-                            macrogrid(iX, iY+1, k, 3 ) ) / 6.0d0
 
-                    macrogrid(iX, iY,   k, subgrid_size) = avg
-                    macrogrid(iX, iY+1, k, 1)            = avg
-                    out_norm = out_norm + dabs(avg - old_value)
+                    old_value = macrogrid(iX, iY, k, subgrid_size)
+
+                    ! Сосед слева (по y): macrogrid(iX, iY, k, subgrid_size-1)
+                    ! Сосед справа (по y): macrogrid(iX, iY+1, k, 2)
+                    ! "Верх/низ" по x внутри той же/смежной подсетки — это trickier,
+                    ! но в данном простом случае:
+                    !   macrogrid(iX, iY, k, subgrid_size-2) => "ещё выше" и т.п.
+                    !
+                    ! Но корректнее взять "4 соседа" для точки (k, subgrid_size) на стыке:
+                    !   левый: macrogrid(iX, iY, k-1, subgrid_size)
+                    !   правый: macrogrid(iX, iY, k+1, subgrid_size)
+                    !   верхний: macrogrid(iX, iY, k, subgrid_size-1)
+                    !   нижний: macrogrid(iX, iY+1, k, 1) — ведь (k,1) — это тот же узел
+                    !   "с нижней" области, но на стыке.
+                    !
+                    ! Для упрощения здесь используем шаблон "гибрид" —
+                    ! ориентируясь на ваш исходный способ, но с весами dx,dy.
+                    !
+                    ! Пример (упрощённый):
+                    new_val = ( &
+                        invdx2*( macrogrid(iX, iY,   k-1, subgrid_size ) + macrogrid(iX, iY,   k+1, subgrid_size ) ) + &
+                        invdy2*( macrogrid(iX, iY,   k,   subgrid_size-1 ) + macrogrid(iX, iY+1, k, 1 ) ) &
+                       ) / denom
+
+                    macrogrid(iX, iY,   k, subgrid_size) = new_val
+                    macrogrid(iX, iY+1, k, 1)            = new_val
+
+                    out_norm = out_norm + dabs(new_val - old_value)
                 end do
             end do
         end do
 
-        ! Вертикальные границы между (iX) и (iX+1)
+        ! -- Вертикальные границы (между iX и iX+1)
         do iX = 1, macrogrid_size_x - 1
             do iY = 1, macrogrid_size_y
                 do k = 2, subgrid_size - 1
-                    old_value = macrogrid(iX, iY, subgrid_size, k)
-                    avg = ( 4.0d0*macrogrid(iX,   iY, subgrid_size-1, k) + &
-                            4.0d0*macrogrid(iX+1, iY, 2,             k)   - &
-                            macrogrid(iX,   iY, subgrid_size-2, k)         - &
-                            macrogrid(iX+1, iY, 3,             k) ) / 6.0d0
 
-                    macrogrid(iX,   iY, subgrid_size, k) = avg
-                    macrogrid(iX+1, iY, 1,            k) = avg
-                    out_norm = out_norm + dabs(avg - old_value)
+                    old_value = macrogrid(iX, iY, subgrid_size, k)
+
+                    new_val = ( &
+                        invdx2*( macrogrid(iX,   iY, subgrid_size-1, k) + macrogrid(iX+1, iY, 2, k ) ) + &
+                        invdy2*( macrogrid(iX,   iY, subgrid_size,   k-1) + macrogrid(iX, iY, subgrid_size, k+1) ) &
+                      ) / denom
+
+                    macrogrid(iX,   iY, subgrid_size, k) = new_val
+                    macrogrid(iX+1, iY, 1,            k) = new_val
+
+                    out_norm = out_norm + dabs(new_val - old_value)
                 end do
             end do
         end do
 
-        ! "Углы", где встречаются 4 блока
+        ! -- "Углы" между четырьмя блоками (iX, iY, subgrid_size, subgrid_size)
+        ! Аналогично берём 4 соседних узла. Примерно:
         do iX = 1, macrogrid_size_x - 1
             do iY = 1, macrogrid_size_y - 1
-                old_value = macrogrid(iX, iY, subgrid_size, subgrid_size)
-                avg = ( 4.0d0 * macrogrid(iX,   iY,   subgrid_size,   subgrid_size-1) + &
-                        4.0d0 * macrogrid(iX,   iY,   subgrid_size-1, subgrid_size)   + &
-                        4.0d0 * macrogrid(iX+1, iY+1, 2,              1)              + &
-                        4.0d0 * macrogrid(iX+1, iY+1, 1,              2)              - &
-                        macrogrid(iX,   iY,   subgrid_size,   subgrid_size-2)         - &
-                        macrogrid(iX,   iY,   subgrid_size-2, subgrid_size)           - &
-                        macrogrid(iX+1, iY+1, 3,              1)                      - &
-                        macrogrid(iX+1, iY+1, 1,              3) ) / 12.0d0
 
-                macrogrid(iX,   iY,   subgrid_size,   subgrid_size)   = avg
-                macrogrid(iX+1, iY,   1,              subgrid_size)   = avg
-                macrogrid(iX,   iY+1, subgrid_size,   1)              = avg
-                macrogrid(iX+1, iY+1, 1,              1)              = avg
-                out_norm = out_norm + dabs(avg - old_value)
+                old_value = macrogrid(iX, iY, subgrid_size, subgrid_size)
+                new_val = ( &
+                    invdx2*( macrogrid(iX, iY, subgrid_size-1, subgrid_size) +  &
+                             macrogrid(iX+1, iY, 2, subgrid_size) ) + &
+                    invdy2*( macrogrid(iX, iY, subgrid_size, subgrid_size-1) + &
+                             macrogrid(iX, iY+1, subgrid_size, 2 ) ) &
+                ) / denom
+
+                macrogrid(iX,   iY,   subgrid_size,   subgrid_size)   = new_val
+                macrogrid(iX+1, iY,   1,              subgrid_size)   = new_val
+                macrogrid(iX,   iY+1, subgrid_size,   1)              = new_val
+                macrogrid(iX+1, iY+1, 1,              1)              = new_val
+
+                out_norm = out_norm + dabs(new_val - old_value)
             end do
         end do
-    end subroutine update_boundaries
+    end subroutine update_interfaces
 
 
     !-----------------------------------------------------------------------
@@ -337,7 +377,11 @@ contains
 
         integer :: iter, iX, iY
         real*8  :: norm_total, norm_sub_sor, norm_bound
-        real*8, allocatable :: local_u(:)
+        real*8  :: dx, dy
+
+        ! Считаем глобальные шаги dx, dy (единая область [0,1] x [0,1])
+        dx = compute_dx(macrogrid_size_x, subgrid_size)
+        dy = compute_dy(macrogrid_size_y, subgrid_size)
 
         out_iterations = 0
 
@@ -347,23 +391,16 @@ contains
             ! (1) Решение SOR в каждой подобласти
             do iX = 1, macrogrid_size_x
                 do iY = 1, macrogrid_size_y
-
-                    allocate(local_u(subgrid_size*subgrid_size))
-                    call copy_in_subgrid(macrogrid(iX,iY,:,:), local_u, subgrid_size)
-
-                    call solve_sor_subdomain(local_u, subgrid_size, omega, eps_sor, max_iter_sor, norm_sub_sor)
-
+                    call solve_sor_subdomain(macrogrid(iX,iY,:,:), subgrid_size, &
+                                             omega, eps_sor, max_iter_sor, norm_sub_sor, dx, dy)
                     if (accumulate_subgrid_error) then
                         norm_total = norm_total + norm_sub_sor
                     end if
-
-                    call copy_out_subgrid(macrogrid(iX,iY,:,:), local_u, subgrid_size)
-                    deallocate(local_u)
                 end do
             end do
 
-            ! (2) Обновляем границы
-            call update_boundaries(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, norm_bound)
+            ! (2) Обновляем интерфейсы (учитывая dx, dy)
+            call update_interfaces(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, norm_bound)
 
             norm_total = norm_total + norm_bound
 
@@ -379,13 +416,13 @@ contains
 
 
     !-----------------------------------------------------------------------
-    ! ПРОСТАЯ РАСЧЁТ ВРЕМЕНИ И ВЫЗОВ solve_macrogrid
+    ! ПРОСТАЯ РАСЧЁТ ВРЕМЕНИ (EXECUTION TIME) И ВЫЗОВ solve_macrogrid
     !-----------------------------------------------------------------------
-    subroutine measure_time(accumulate_subgrid_error,                           &
-                            macrogrid, macrogrid_size_x, macrogrid_size_y,      &
-                            subgrid_size, omega,                                &
-                            max_iter_sor, max_iter_interface,                   &
-                            eps_sor, eps_interface)
+    subroutine measure_execution_time(accumulate_subgrid_error,                     &
+                                      macrogrid, macrogrid_size_x, macrogrid_size_y,&
+                                      subgrid_size, omega,                          &
+                                      max_iter_sor, max_iter_interface,             &
+                                      eps_sor, eps_interface)
         implicit none
         logical, intent(in) :: accumulate_subgrid_error
         integer, intent(in) :: macrogrid_size_x, macrogrid_size_y
@@ -410,13 +447,13 @@ contains
         elapsed_time = end_time - start_time
         print *, '  Time to solve macrogrid = ', elapsed_time, ' seconds'
         print *, '  Number of interface iterations = ', iterations
-    end subroutine measure_time
+    end subroutine measure_execution_time
 
 
     !-----------------------------------------------------------------------
-    ! ВЫЧИСЛЕНИЕ ОШИБКИ ДЛЯ "ЕДИНИЧКИ" НА ГРАНИЦЕ
+    ! ВЫЧИСЛЕНИЕ ОШИБКИ ДЛЯ "КОНСТАНТНОГО" ГРАНИЧНОГО УСЛОВИЯ
     !-----------------------------------------------------------------------
-    subroutine compute_error(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
+    subroutine compute_constant_boundary_error(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
         implicit none
         integer, intent(in) :: macrogrid_size_x, macrogrid_size_y, subgrid_size
         real*8,  intent(in) :: macrogrid(macrogrid_size_x,macrogrid_size_y,subgrid_size,subgrid_size)
@@ -437,14 +474,14 @@ contains
             end do
         end do
 
-        print *, '  Max error (ones) = ', max_error
-    end subroutine compute_error
+        print *, '  Max error (constant boundary) = ', max_error
+    end subroutine compute_constant_boundary_error
 
 
     !-----------------------------------------------------------------------
-    ! ВЫЧИСЛЕНИЕ ОШИБКИ ДЛЯ "ЛОГАРИФМИЧЕСКИХ" ГРАНИЧНЫХ УСЛОВИЙ
+    ! ВЫЧИСЛЕНИЕ ОШИБКИ ДЛЯ "ЛОГАРИФМИЧЕСКОГО" ГРАНИЧНОГО УСЛОВИЯ
     !-----------------------------------------------------------------------
-    subroutine compute_hard_error(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
+    subroutine compute_logarithmic_boundary_error(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
         implicit none
         real*8, parameter :: R1 = 0.1d0, R2 = 1.0d0
         real*8, parameter :: x_min = 0.3d0, y_min = 0.0d0
@@ -480,7 +517,7 @@ contains
             end do
         end do
 
-        print *, '  Max error (log)  = ', max_error
-    end subroutine compute_hard_error
+        print *, '  Max error (logarithmic boundary)  = ', max_error
+    end subroutine compute_logarithmic_boundary_error
 
 end program macrogrid_solver
