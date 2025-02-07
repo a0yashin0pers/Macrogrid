@@ -283,6 +283,8 @@ subroutine update_boundaries_gmres(macrogrid, b, num_subgrids, subgrid_size, bor
 
     end do
 
+    write (*,*) iter
+
     l = 1
     norm = 0.0d0
 
@@ -379,10 +381,6 @@ subroutine solve_macrogrid_with_gmres(one_sor, macrogrid, num_subgrids, subgrid_
 
         call update_boundaries_gmres(macrogrid, b, num_subgrids, subgrid_size, border_size, max_iter, epsilon, norm_boundaries)
         norm = norm + norm_boundaries
-
-        call print_macrogrid(macrogrid, num_subgrids, subgrid_size)
-        print *, " "
-        print *, " "    
 
         if (norm < epsilon) then
             iterations = iter
