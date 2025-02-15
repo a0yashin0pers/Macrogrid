@@ -1,3 +1,47 @@
+subroutine original (u, u_size, factor, eps, max_iter, error, dx, dy)
+   implicit none
+
+   integer, intent(in) :: u_size, max_iter
+   real*8,  intent(in) :: factor, eps, dx, dy
+   real*8,  intent(inout) :: u(u_size*u_size)
+   real*8,  intent(out)   :: error
+
+   integer :: iter, i, l0, l1, l2, l3
+   real*8 :: invdx2, invdy2, f0, f1, u_old
+
+   invdx2 = 1.0d0/(dx*dx)
+   invdy2 = 1.0d0/(dy*dy)
+
+   f0 = 1.0d0 - factor
+   f1 = factor / (2.0d0*invdx2 + 2.0d0*invdy2)
+
+   do iter = 1, max_iter
+
+      error = 0.0d0
+      i = u_size + 2
+
+      do l1 = 3, u_size
+         do l0 = 3, u_size
+
+            u_old = u(i)
+            u(i) = f0*u_old + &
+               f1*((u(i-1) + u(i+1))*invdx2 + &
+               u((i-u_size) + u(i+u_size))*invdy2)
+
+            error = error + abs(u(i) - u_old)
+            i = i + 1
+
+         end do
+         i = i + 2
+      end do
+
+      if (error < eps) then
+         return
+      end if
+
+   end do
+end subroutine original
+
 subroutine tiling (u, u_size, factor, eps, max_iter, error, dx, dy)
    implicit none
 
