@@ -11,13 +11,15 @@ program macrogrid_solver
    real*8, dimension(SUBGRID_SIZES_COUNT), parameter :: factors_log = &
       [1.52129d0, 1.69524d0, 1.82919d0, 1.90899d0, 1.95307d0, 1.97618d0, 1.98793d0, 1.99403d0]
 
-   integer, parameter :: SUBGRID_CFGS_COUNT = 1
+   integer, parameter :: SUBGRID_CFGS_COUNT = 5
    integer, dimension(SUBGRID_CFGS_COUNT), parameter :: subgrid_configs = &
-      [10]
+      [1, 2, 3, 4, 5]
 
-   integer, parameter :: MACRIGRID_CFGS_COUNT = 1
+   integer, parameter :: MACRIGRID_CFGS_COUNT = 3
    integer, dimension(2, MACRIGRID_CFGS_COUNT), parameter :: macrogrid_configs = reshape([ &
-      2, 2 &
+      1, 1, &
+      2, 2, &
+      4, 4 &
       ], shape=[2, MACRIGRID_CFGS_COUNT])
 
    integer, parameter :: max_iter_subgrid   = 100000
@@ -31,9 +33,11 @@ program macrogrid_solver
    real*8  :: omega, time, error
 
    external :: simple_iteration, conjugate_residuals
-   external :: original_sor, tiling_sor, subtiling_sor
+   external :: original_sor, tiling_sor, subtiling_sor, subtiling_sor_test_version
    external :: initialize_constant_boundary, initialize_logarithmic_boundary
    external :: compute_constant_boundary_error, compute_logarithmic_boundary_error
+
+   print *, "conjugate_residuals with original_sor"
 
    do i_cfg = 1, MACRIGRID_CFGS_COUNT
 
@@ -42,19 +46,19 @@ program macrogrid_solver
 
       do i_size = 1, SUBGRID_CFGS_COUNT
 
-         sub_sz = subgrid_configs(i_size)
-         omega = factors_log(i_size)
+         sub_sz = subgrid_sizes(subgrid_configs(i_size))
+         omega = factors_log(subgrid_configs(i_size))
 
-         call run_test(simple_iteration, original_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+         call run_test(conjugate_residuals, original_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
             macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
-            
+
       end do
    end do
 
 end program macrogrid_solver
 
 subroutine run_test(macrigrid_solver, subgrid_solver, &
-   boundary_condition, compute_error,                &
+   boundary_condition, compute_error,                 &
    macrogrid, macrogrid_size_x, macrogrid_size_y,     &
    subgrid_size, omega,                               &
    eps_subgrid, eps_interface,                        &
@@ -64,16 +68,17 @@ subroutine run_test(macrigrid_solver, subgrid_solver, &
    integer, intent(in) :: macrogrid_size_x, macrogrid_size_y, subgrid_size, max_iter_subgrid, max_iter_interface
    real*8,  intent(inout) :: macrogrid(macrogrid_size_x,macrogrid_size_y,subgrid_size,subgrid_size)
    real*8,  intent(in)   :: omega, eps_subgrid, eps_interface
-   real*8   :: error, time, iter
+   real*8   :: error, time
+   integer   :: iter
 
    call boundary_condition(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
    call macrigrid_solver(subgrid_solver, macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, omega, eps_subgrid, eps_interface, &
       max_iter_subgrid, max_iter_interface, error, time, iter)
    call compute_error(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, error)
 
-   write(*,'(A,I5,A,I5,A,I5,A,F14.8,A,F14.8,A,I5)') &
+   write(*,'(A,I5,A,I5,A,I5,A,F14.8,A,F14.8,A,I6)') &
       "Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#", &
-      macrogrid_size_x, "&",macrogrid_size_y, "&", subgrid_size, "&", error, "&", time, "&", iter
+      macrogrid_size_x, "&", macrogrid_size_y, "&", subgrid_size, "&", error, "&", time, "&", iter
 
 end subroutine run_test
 
@@ -156,6 +161,7 @@ subroutine set_interface(macrogrid, u, macrogrid_size_x, macrogrid_size_y, subgr
          do k = 2, subgrid_size - 1
 
             macrogrid(iX, iY, k, subgrid_size) = u(i)
+            macrogrid(iX, iY+1, k, 1) = u(i)
             i = i + 1
 
          end do
@@ -167,6 +173,7 @@ subroutine set_interface(macrogrid, u, macrogrid_size_x, macrogrid_size_y, subgr
          do k = 2, subgrid_size - 1
 
             macrogrid(iX, iY, subgrid_size, k) = u(i)
+            macrogrid(iX+1, iY, 1, k) = u(i)
             i = i + 1
 
          end do
@@ -189,8 +196,8 @@ subroutine s(macrogrid, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size
       do iY = 1, macrogrid_size_y - 1
          do k = 2, subgrid_size - 1
 
-            s_vec(i) = (3.0d0*macrogrid(iX, iY, k, subgrid_size) - 4.0d0*macrogrid(iX, iY, k, subgrid_size-1 ) + macrogrid(iX, iY, k, subgrid_size-2)) / (2.0d0 * dx) + &
-               ( - 3.0d0*macrogrid(iX, iY+1, k, 1) + 4.0d0*macrogrid(iX, iY+1, k, 2 ) - macrogrid(iX, iY+1, k, 3 )) / (2.0d0 * dy)
+            s_vec(i) = (3.0d0*macrogrid(iX, iY, k, subgrid_size) - 4.0d0*macrogrid(iX, iY, k, subgrid_size-1 ) + macrogrid(iX, iY, k, subgrid_size-2) - &
+               (- 3.0d0*macrogrid(iX, iY+1, k, 1) + 4.0d0*macrogrid(iX, iY+1, k, 2 ) - macrogrid(iX, iY+1, k, 3 ))) / (2.0d0 * dy)
             i = i + 1
 
          end do
@@ -201,8 +208,8 @@ subroutine s(macrogrid, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size
       do iY = 1, macrogrid_size_y
          do k = 2, subgrid_size - 1
 
-            s_vec(i) = (3.0d0*macrogrid(iX, iY, k, subgrid_size) - 4.0d0*macrogrid(iX, iY, k, subgrid_size-1 ) + macrogrid(iX, iY, k, subgrid_size-2)) / (2.0d0 * dx) + &
-               ( - 3.0d0*macrogrid(iX, iY+1, k, 1) + 4.0d0*macrogrid(iX, iY+1, k, 2 ) - macrogrid(iX, iY+1, k, 3 )) / (2.0d0 * dy)
+            s_vec(i) = (3.0d0*macrogrid(iX, iY, subgrid_size, k) - 4.0d0*macrogrid(iX,iY, subgrid_size-1, k) + macrogrid(iX,iY, subgrid_size-2, k) - &
+               (- 3.0d0*macrogrid(iX+1, iY, 1, k) + 4.0d0*macrogrid(iX+1, iY, 2, k) - macrogrid(iX+1, iY, 3, k))) / (2.0d0 * dx)
             i = i + 1
 
          end do
@@ -396,8 +403,6 @@ subroutine conjugate_residuals(subgrid_solver, macrogrid,&
 
    call cpu_time(end_time)
    time = end_time - start_time
-
-   call print_macrogrid(macrogrid, macrogrid_size_x, subgrid_size)
 
 end subroutine conjugate_residuals
 
@@ -677,7 +682,7 @@ end subroutine original_sor
 subroutine tiling_sor(u, u_size, factor, eps, max_iter, error, dx, dy)
    implicit none
 
-   integer, parameter :: tile_size = 8
+   integer, parameter :: tile_size = 4
 
    integer, intent(in) :: u_size, max_iter
    real*8,  intent(in) :: factor, eps, dx, dy
@@ -731,7 +736,7 @@ end subroutine tiling_sor
 subroutine subtiling_sor(u, u_size, factor, eps, max_iter, error, dx, dy)
    implicit none
 
-   integer, parameter :: tile_size = 8
+   integer, parameter :: tile_size = 4
    integer, parameter :: tile_level = tile_size
 
    integer, intent(in) :: u_size, max_iter
@@ -957,3 +962,126 @@ subroutine subtiling_sor(u, u_size, factor, eps, max_iter, error, dx, dy)
 
    end do
 end subroutine subtiling_sor
+
+subroutine subtiling_sor_test_version(u, u_size, factor, eps, max_iter, error, dx, dy)
+   implicit none
+
+   integer, parameter :: tile_size = 4
+   integer, parameter :: tile_level = tile_size
+
+   integer, intent(in) :: u_size, max_iter
+   real*8,  intent(in) :: factor, eps, dx, dy
+   real*8,  intent(inout) :: u(u_size*u_size)
+   real*8,  intent(out)   :: error
+
+   integer, dimension(:,:), allocatable :: subtile_indices
+   integer :: tile_count, subtile_count, subtile_idx, iter, i, l0, l1, l2, l3, l4, s0, s1, s2, s3
+   real*8 :: invdx2, invdy2, f0, f1, u_old
+
+   tile_count = (u_size - 2)/tile_size
+   subtile_count = tile_count*tile_count*(tile_level+1)
+   allocate(subtile_indices(subtile_count, 4))
+   subtile_idx = 1
+
+   do l4 = 1, tile_count
+
+      if (l4.eq.1) then
+         s1 = -1
+      else if (l4.eq.tile_count) then
+         s1 = 1
+      else
+         s1 = 0
+      end if
+
+      if (l4.eq.1) then
+         s3 = 0
+      else
+         s3 = 1
+      end if
+
+      do l3 = 1, tile_count
+
+         if (l3.eq.1) then
+            s0 = -1
+         else if (l3.eq.tile_count) then
+            s0 = 1
+         else
+            s0 = 0
+         end if
+
+         if (l3.eq.1) then
+            s2 = 0
+         else
+            s2 = 1
+         end if
+
+         do l2 = 0, tile_level
+            subtile_indices(subtile_idx, 1) = (l4-1)*tile_size*u_size + (l3-1)*tile_size + u_size + 2 - l2*s3*u_size - l2*s2
+            subtile_indices(subtile_idx, 2) = tile_size + l2*s1
+            subtile_indices(subtile_idx, 3) = tile_size + l2*s0
+            if (l2.eq.tile_level) then
+               subtile_indices(subtile_idx, 4) = 1
+            else
+               subtile_indices(subtile_idx, 4) = 0
+            end if
+            subtile_idx = subtile_idx + 1
+
+         end do
+      end do
+   end do
+
+   invdx2 = 1.0d0/(dx*dx)
+   invdy2 = 1.0d0/(dy*dy)
+
+   f0 = 1.0d0 - factor
+   f1 = factor / (2.0d0*invdx2 + 2.0d0*invdy2)
+
+   do iter = 1, max_iter
+
+      error = 0.0d0
+      i = u_size + 2
+
+      do subtile_idx = 1, subtile_count
+         i = subtile_indices(subtile_idx, 1)
+         l2 = subtile_indices(subtile_idx, 2)
+         l3 = subtile_indices(subtile_idx, 3)
+         l4 = subtile_indices(subtile_idx, 4)
+         if (l4.eq.1) then
+            do l1 = 1, l2
+               do l0 = 1, l3
+
+                  u_old = u(i)
+                  u(i) = f0*u_old + &
+                     f1*((u(i-1) + u(i+1))*invdx2 + &
+                     (u(i-u_size) + u(i+u_size))*invdy2)
+                  error = error + abs(u(i) - u_old)
+                  i = i + 1
+
+               end do
+               i = i + u_size - l3
+            end do
+         else
+            do l1 = 1, l2
+               do l0 = 1, l3
+
+                  u_old = u(i)
+                  u(i) = f0*u_old + &
+                     f1*((u(i-1) + u(i+1))*invdx2 + &
+                     (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+
+               end do
+               i = i + u_size - l3
+            end do
+         end if
+      end do
+
+      if (error < eps) then
+         exit
+      end if
+
+   end do
+
+   deallocate(subtile_indices)
+
+end subroutine subtiling_sor_test_version
