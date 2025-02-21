@@ -11,9 +11,9 @@ program macrogrid_solver
    real*8, dimension(SUBGRID_SIZES_COUNT), parameter :: factors_log = &
       [1.52129d0, 1.69524d0, 1.82919d0, 1.90899d0, 1.95307d0, 1.97618d0, 1.98793d0, 1.99403d0]
 
-   integer, parameter :: SUBGRID_CFGS_COUNT = 5
+   integer, parameter :: SUBGRID_CFGS_COUNT = 4
    integer, dimension(SUBGRID_CFGS_COUNT), parameter :: subgrid_configs = &
-      [1, 2, 3, 4, 5]
+      [2, 3, 4, 5]
 
    integer, parameter :: MACRIGRID_CFGS_COUNT = 3
    integer, dimension(2, MACRIGRID_CFGS_COUNT), parameter :: macrogrid_configs = reshape([ &
@@ -37,6 +37,63 @@ program macrogrid_solver
    external :: initialize_constant_boundary, initialize_logarithmic_boundary
    external :: compute_constant_boundary_error, compute_logarithmic_boundary_error
 
+   print *, "simple_iteration_one_iter with original_sor"
+
+   do i_cfg = 1, MACRIGRID_CFGS_COUNT
+
+      cfg_x = macrogrid_configs(1, i_cfg)
+      cfg_y = macrogrid_configs(2, i_cfg)
+
+      do i_size = 1, SUBGRID_CFGS_COUNT
+
+         sub_sz = subgrid_sizes(subgrid_configs(i_size))
+         omega = factors_log(subgrid_configs(i_size))
+
+         call run_test(simple_iteration, original_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, 1, max_iter_interface)
+
+      end do
+   end do
+
+   print *, " "
+   print *, "simple_iteration_one_iter with tiling_sor"
+
+   do i_cfg = 1, MACRIGRID_CFGS_COUNT
+
+      cfg_x = macrogrid_configs(1, i_cfg)
+      cfg_y = macrogrid_configs(2, i_cfg)
+
+      do i_size = 1, SUBGRID_CFGS_COUNT
+
+         sub_sz = subgrid_sizes(subgrid_configs(i_size))
+         omega = factors_log(subgrid_configs(i_size))
+
+         call run_test(simple_iteration, tiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, 1, max_iter_interface)
+
+      end do
+   end do
+
+   print *, " "
+   print *, "simple_iteration_one_iter with subtiling_sor"
+
+   do i_cfg = 1, MACRIGRID_CFGS_COUNT
+
+      cfg_x = macrogrid_configs(1, i_cfg)
+      cfg_y = macrogrid_configs(2, i_cfg)
+
+      do i_size = 1, SUBGRID_CFGS_COUNT
+
+         sub_sz = subgrid_sizes(subgrid_configs(i_size))
+         omega = factors_log(subgrid_configs(i_size))
+
+         call run_test(simple_iteration, subtiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, 1, max_iter_interface)
+
+      end do
+   end do
+
+   print *, " "
    print *, "conjugate_residuals with original_sor"
 
    do i_cfg = 1, MACRIGRID_CFGS_COUNT
@@ -50,6 +107,44 @@ program macrogrid_solver
          omega = factors_log(subgrid_configs(i_size))
 
          call run_test(conjugate_residuals, original_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
+
+      end do
+   end do
+
+   print *, " "
+   print *, "conjugate_residuals with tiling_sor"
+
+   do i_cfg = 1, MACRIGRID_CFGS_COUNT
+
+      cfg_x = macrogrid_configs(1, i_cfg)
+      cfg_y = macrogrid_configs(2, i_cfg)
+
+      do i_size = 1, SUBGRID_CFGS_COUNT
+
+         sub_sz = subgrid_sizes(subgrid_configs(i_size))
+         omega = factors_log(subgrid_configs(i_size))
+
+         call run_test(conjugate_residuals, tiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
+
+      end do
+   end do
+
+   print *, " "
+   print *, "conjugate_residuals with subtiling_sor"
+
+   do i_cfg = 1, MACRIGRID_CFGS_COUNT
+
+      cfg_x = macrogrid_configs(1, i_cfg)
+      cfg_y = macrogrid_configs(2, i_cfg)
+
+      do i_size = 1, SUBGRID_CFGS_COUNT
+
+         sub_sz = subgrid_sizes(subgrid_configs(i_size))
+         omega = factors_log(subgrid_configs(i_size))
+
+         call run_test(conjugate_residuals, subtiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
             macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
 
       end do

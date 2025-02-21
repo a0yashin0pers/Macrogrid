@@ -1,0 +1,83 @@
+ simple_iteration_one_iter with original_sor
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   18&    1.84545166&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   34&    1.87680729&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   66&    1.89048520&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&  130&    1.89684961&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   18&    0.00000870&    0.01562500&   403
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   34&    0.00000808&    0.03125000&   787
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   66&    0.00000799&    0.18750000&  1558
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&  130&    0.00000797&    0.85937500&  3095
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   18&    0.00000631&    0.03125000&  1635
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   34&    0.00000620&    0.50000000&  3195
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   66&    0.00000619&    3.53125000&  6319
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000617&   26.75000000& 12548
+  
+ simple_iteration_one_iter with tiling_sor
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   18&    1.84545166&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   34&    1.87680729&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   66&    1.89048520&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&  130&    1.89684961&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   18&    0.00000870&    0.00000000&   403
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   34&    0.00000808&    0.00000000&   787
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   66&    0.00000799&    0.09375000&  1558
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&  130&    0.00000797&    0.59375000&  3095
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   18&    0.00000631&    0.01562500&  1635
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   34&    0.00000620&    0.29687500&  3195
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   66&    0.00000619&    1.90625000&  6319
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000617&   22.42187500& 12548
+  
+ simple_iteration_one_iter with subtiling_sor
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   18&    1.43435762&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   34&    1.74524777&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   66&    1.84187787&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&  130&    1.87596170&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   18&    0.00000798&    0.00000000&   331
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   34&    0.00000766&    0.03125000&   659
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   66&    0.00000768&    0.18750000&  1321
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&  130&    0.00000780&    1.12500000&  2647
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   18&    0.00000481&    0.03125000&  1229
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   34&    0.00000479&    0.31250000&  2443
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   66&    0.00000485&    2.75000000&  4893
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000488&   30.01562500&  9806
+  
+ conjugate_residuals with original_sor
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   18&    0.00001763&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   34&    0.00000467&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   66&    0.00000122&    0.01562500&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&  130&    0.00000034&    0.03125000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   18&    0.00000433&    0.00000000&    33
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   34&    0.00000113&    0.06250000&    41
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   66&    0.00000057&    0.82812500&    50
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&  130&    0.00000014&    5.45312500&    72
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   18&    0.00000235&    0.04687500&    58
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   34&    0.00000084&    0.53125000&    84
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   66&    0.00000037&    6.73437500&   123
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000013&   42.06250000&   159
+  
+ conjugate_residuals with tiling_sor
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   18&    0.00001763&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   34&    0.00000467&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   66&    0.00000122&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&  130&    0.00000034&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   18&    0.00000433&    0.01562500&    33
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   34&    0.00000113&    0.01562500&    41
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   66&    0.00000053&    0.26562500&    50
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&  130&    0.00000012&    3.00000000&    73
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   18&    0.00000220&    0.00000000&    56
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   34&    0.00000082&    0.20312500&    85
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   66&    0.00000026&    2.04687500&   115
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000012&   23.21875000&   159
+  
+ conjugate_residuals with subtiling_sor
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   18&    0.00001771&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   34&    0.00000474&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&   66&    0.00000123&    0.00000000&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    1&    1&  130&    0.00000031&    0.01562500&     1
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   18&    0.00000454&    0.00000000&    33
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   34&    0.00000119&    0.03125000&    40
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&   66&    0.00000052&    0.20312500&    50
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    2&    2&  130&    0.00000013&    2.04687500&    73
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   18&    0.00000178&    0.01562500&    58
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   34&    0.00000063&    0.14062500&    84
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&   66&    0.00000037&    1.18750000&   123
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000019&   14.64062500&   162
