@@ -1,4 +1,4 @@
-subroutine original (u, u_size, factor, eps, max_iter, error, dx, dy)
+subroutine original_sor (u, u_size, factor, eps, max_iter, error, dx, dy)
    implicit none
 
    integer, intent(in) :: u_size, max_iter
@@ -40,9 +40,9 @@ subroutine original (u, u_size, factor, eps, max_iter, error, dx, dy)
       end if
 
    end do
-end subroutine original
+end subroutine original_sor
 
-subroutine tiling (u, u_size, factor, eps, max_iter, error, dx, dy)
+subroutine tiling_sor (u, u_size, factor, eps, max_iter, error, dx, dy)
    implicit none
 
    integer, parameter :: tile_size = 8
@@ -94,9 +94,9 @@ subroutine tiling (u, u_size, factor, eps, max_iter, error, dx, dy)
       end if
 
    end do
-end subroutine tiling
+end subroutine tiling_sor
 
-subroutine subtiling (u, u_size, factor, eps, max_iter, error, dx, dy)
+subroutine subtiling_sor (u, u_size, factor, eps, max_iter, error, dx, dy)
    implicit none
 
    integer, parameter :: tile_size = 8
@@ -324,4 +324,4 @@ subroutine subtiling (u, u_size, factor, eps, max_iter, error, dx, dy)
       end if
 
    end do
-end subroutine subtiling
+end subroutine subtiling_sor
