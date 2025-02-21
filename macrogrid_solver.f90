@@ -470,6 +470,9 @@ subroutine conjugate_residuals(subgrid_solver, macrogrid,&
 
    end do
 
+   call cpu_time(end_time)
+   time = end_time - start_time
+
    call set_interface(macrogrid, u_n, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size)
    do iX = 1, macrogrid_size_x
       do iY = 1, macrogrid_size_y
@@ -495,9 +498,6 @@ subroutine conjugate_residuals(subgrid_solver, macrogrid,&
          macrogrid(iX+1, iY+1, 1,              1)              = new_val
       end do
    end do
-
-   call cpu_time(end_time)
-   time = end_time - start_time
 
 end subroutine conjugate_residuals
 
