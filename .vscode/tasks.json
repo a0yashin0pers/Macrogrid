@@ -13,7 +13,7 @@
                 "options": {
                     "cwd": "${workspaceFolder}",
                     "env": {
-                        "IFX_FLAGS": "-O3"
+                        "IFX_FLAGS": ""
                     }
                 }
             },
@@ -30,7 +30,7 @@
                         "args": ["/c"]
                     },
                     "env": {
-                        "IFX_FLAGS": "/O3 /fast"
+                        "IFX_FLAGS": ""
                     }
                 }
             },
