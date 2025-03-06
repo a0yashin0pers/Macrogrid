@@ -38,7 +38,7 @@
                 "command": "bash",
                 "args": [
                     "-c",
-                    "mkdir -p build && gfortran ${env:GFORTRAN_FLAGS} \"${file}\" -o \"build/${fileBasenameNoExtension}\" && \"./build/${fileBasenameNoExtension}\""
+                    "mkdir -p build && gfortran $GFORTRAN_FLAGS \"${file}\" -o \"build/${fileBasenameNoExtension}\" && \"./build/${fileBasenameNoExtension}\""
                 ],
                 "options": {
                     "cwd": "${workspaceFolder}",
