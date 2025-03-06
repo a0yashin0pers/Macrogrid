@@ -13,7 +13,7 @@
                 "options": {
                     "cwd": "${workspaceFolder}",
                     "env": {
-                        "IFX_FLAGS": ""
+                        "IFX_FLAGS": "-xHost"
                     }
                 }
             },
@@ -31,6 +31,19 @@
                     },
                     "env": {
                         "IFX_FLAGS": ""
+                    }
+                }
+            },
+            "osx": {
+                "command": "bash",
+                "args": [
+                    "-c",
+                    "mkdir -p build && gfortran ${env:GFORTRAN_FLAGS} \"${file}\" -o \"build/${fileBasenameNoExtension}\" && \"./build/${fileBasenameNoExtension}\""
+                ],
+                "options": {
+                    "cwd": "${workspaceFolder}",
+                    "env": {
+                        "GFORTRAN_FLAGS": "-march=native"
                     }
                 }
             },
