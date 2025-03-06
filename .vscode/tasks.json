@@ -4,25 +4,15 @@
         {
             "label": "Compile and Run Fortran",
             "type": "shell",
-            "command": "cmd.exe",
+            "command": "bash",
             "args": [
-                "/c",
-                "mkdir build 2>nul & call \"C:\\Program Files (x86)\\Intel\\oneAPI\\setvars.bat\" >nul 2>&1 && ifx /nologo",
-                "/O3",
-                "/fast",
-                "/module:build",
-                "/object:build\\${fileBasenameNoExtension}.obj",
-                "${file}",
-                "-o",
-                "build\\${fileBasenameNoExtension}.exe",
-                "&&",
-                "build\\${fileBasenameNoExtension}.exe"
+                "-c",
+                "mkdir -p build && /opt/intel/oneapi/compiler/2025.0/bin/ifx $IFX_FLAGS -module build \"${file}\" -o \"build/${fileBasenameNoExtension}\" && \"./build/${fileBasenameNoExtension}\""
             ],
             "options": {
                 "cwd": "${workspaceFolder}",
-                "shell": {
-                    "executable": "cmd.exe",
-                    "args": ["/c"]
+                "env": {
+                    "LD_LIBRARY_PATH": "/opt/intel/oneapi/compiler/2025.0/compiler/lib/intel64_lin:${env:LD_LIBRARY_PATH}"
                 }
             },
             "group": {
