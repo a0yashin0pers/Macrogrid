@@ -1,5 +1,6 @@
 program macrogrid_solver
    implicit none
+   integer, parameter :: io = 10
 
    integer, parameter :: SUBGRID_SIZES_COUNT = 8
    integer, dimension(SUBGRID_SIZES_COUNT), parameter :: subgrid_sizes = &
@@ -11,14 +12,14 @@ program macrogrid_solver
    real*8, dimension(SUBGRID_SIZES_COUNT), parameter :: factors_log = &
       [1.52129d0, 1.69524d0, 1.82919d0, 1.90899d0, 1.95307d0, 1.97618d0, 1.98793d0, 1.99403d0]
 
-   integer, parameter :: SUBGRID_CFGS_COUNT = 4
+   integer, parameter :: SUBGRID_CFGS_COUNT = 5
    integer, dimension(SUBGRID_CFGS_COUNT), parameter :: subgrid_configs = &
-      [2, 3, 4, 5]
+      [1, 2, 3, 4, 5]
 
    integer, parameter :: MACRIGRID_CFGS_COUNT = 3
    integer, dimension(2, MACRIGRID_CFGS_COUNT), parameter :: macrogrid_configs = reshape([ &
-      1, 1, &
       2, 2, &
+      3, 3, &
       4, 4 &
       ], shape=[2, MACRIGRID_CFGS_COUNT])
 
@@ -37,100 +38,91 @@ program macrogrid_solver
    external :: initialize_constant_boundary, initialize_logarithmic_boundary
    external :: compute_constant_boundary_error, compute_logarithmic_boundary_error
 
-   print *, "simple_iteration_one_iter with original_sor"
+   open(io, file='results.txt', status='unknown', action='write')
+
+   write(io, *) "simple_iteration_one_iter with original_sor"
    do i_cfg = 1, MACRIGRID_CFGS_COUNT
       cfg_x = macrogrid_configs(1, i_cfg)
       cfg_y = macrogrid_configs(2, i_cfg)
       do i_size = 1, SUBGRID_CFGS_COUNT
          sub_sz = subgrid_sizes(subgrid_configs(i_size))
          omega = factors_log(subgrid_configs(i_size))
-         call run_test(simple_iteration, original_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+         call run_test(io, simple_iteration, original_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
             macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, 1, max_iter_interface)
       end do
    end do
-   print *, " "
+   write(io, *) " "
 
-   print *, "simple_iteration_one_iter with tiling_sor"
+   write(io, *) "simple_iteration_one_iter with tiling_sor"
    do i_cfg = 1, MACRIGRID_CFGS_COUNT
       cfg_x = macrogrid_configs(1, i_cfg)
       cfg_y = macrogrid_configs(2, i_cfg)
       do i_size = 1, SUBGRID_CFGS_COUNT
          sub_sz = subgrid_sizes(subgrid_configs(i_size))
          omega = factors_log(subgrid_configs(i_size))
-         call run_test(simple_iteration, tiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+         call run_test(io, simple_iteration, tiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
             macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, 1, max_iter_interface)
       end do
    end do
-   print *, " "
+   write(io, *) " "
 
-   print *, "simple_iteration_one_iter with subtiling_sor"
+   write(io, *) "simple_iteration_one_iter with subtiling_sor"
    do i_cfg = 1, MACRIGRID_CFGS_COUNT
       cfg_x = macrogrid_configs(1, i_cfg)
       cfg_y = macrogrid_configs(2, i_cfg)
       do i_size = 1, SUBGRID_CFGS_COUNT
          sub_sz = subgrid_sizes(subgrid_configs(i_size))
          omega = factors_log(subgrid_configs(i_size))
-         call run_test(simple_iteration, subtiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+         call run_test(io, simple_iteration, subtiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
             macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, 1, max_iter_interface)
       end do
    end do
-   print *, " "
+   write(io, *) " "
 
-   print *, "conjugate_residuals with original_sor"
+   write(io, *) "conjugate_residuals with original_sor"
    do i_cfg = 1, MACRIGRID_CFGS_COUNT
       cfg_x = macrogrid_configs(1, i_cfg)
       cfg_y = macrogrid_configs(2, i_cfg)
       do i_size = 1, SUBGRID_CFGS_COUNT
          sub_sz = subgrid_sizes(subgrid_configs(i_size))
          omega = factors_log(subgrid_configs(i_size))
-         call run_test(conjugate_residuals, original_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+         call run_test(io, conjugate_residuals, original_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
             macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
       end do
    end do
-   print *, " "
+   write(io, *) " "
 
-   print *, "conjugate_residuals with tiling_sor"
+   write(io, *) "conjugate_residuals with tiling_sor"
    do i_cfg = 1, MACRIGRID_CFGS_COUNT
       cfg_x = macrogrid_configs(1, i_cfg)
       cfg_y = macrogrid_configs(2, i_cfg)
       do i_size = 1, SUBGRID_CFGS_COUNT
          sub_sz = subgrid_sizes(subgrid_configs(i_size))
          omega = factors_log(subgrid_configs(i_size))
-         call run_test(conjugate_residuals, tiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+         call run_test(io, conjugate_residuals, tiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
             macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
       end do
    end do
-   print *, " "
+   write(io, *) " "
 
-   print *, "conjugate_residuals with subtiling_sor"
+   write(io, *) "conjugate_residuals with subtiling_sor"
    do i_cfg = 1, MACRIGRID_CFGS_COUNT
       cfg_x = macrogrid_configs(1, i_cfg)
       cfg_y = macrogrid_configs(2, i_cfg)
       do i_size = 1, SUBGRID_CFGS_COUNT
          sub_sz = subgrid_sizes(subgrid_configs(i_size))
          omega = factors_log(subgrid_configs(i_size))
-         call run_test(conjugate_residuals, subtiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+         call run_test(io, conjugate_residuals, subtiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
             macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
       end do
    end do
-   print *, " "
+   write(io, *) " "
 
-   print *, "conjugate_residuals with subtiling_sor_test_version"
-   do i_cfg = 1, MACRIGRID_CFGS_COUNT
-      cfg_x = macrogrid_configs(1, i_cfg)
-      cfg_y = macrogrid_configs(2, i_cfg)
-      do i_size = 1, SUBGRID_CFGS_COUNT
-         sub_sz = subgrid_sizes(subgrid_configs(i_size))
-         omega = factors_log(subgrid_configs(i_size))
-         call run_test(conjugate_residuals, subtiling_sor_test_version, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
-            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
-      end do
-   end do
-   print *, " "
+   close(io)
 
 end program macrogrid_solver
 
-subroutine run_test(macrigrid_solver, subgrid_solver, &
+subroutine run_test(io, macrigrid_solver, subgrid_solver, &
    boundary_condition, compute_error,                 &
    macrogrid, macrogrid_size_x, macrogrid_size_y,     &
    subgrid_size, omega,                               &
@@ -138,18 +130,18 @@ subroutine run_test(macrigrid_solver, subgrid_solver, &
    max_iter_subgrid, max_iter_interface)
    implicit none
    external :: macrigrid_solver, subgrid_solver, boundary_condition, compute_error
-   integer, intent(in) :: macrogrid_size_x, macrogrid_size_y, subgrid_size, max_iter_subgrid, max_iter_interface
+   integer, intent(in) :: io, macrogrid_size_x, macrogrid_size_y, subgrid_size, max_iter_subgrid, max_iter_interface
    real*8,  intent(inout) :: macrogrid(macrogrid_size_x,macrogrid_size_y,subgrid_size,subgrid_size)
    real*8,  intent(in)   :: omega, eps_subgrid, eps_interface
    real*8   :: error, time
-   integer   :: iter
+   integer  :: iter
 
    call boundary_condition(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
    call macrigrid_solver(subgrid_solver, macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, omega, eps_subgrid, eps_interface, &
       max_iter_subgrid, max_iter_interface, error, time, iter)
    call compute_error(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, error)
 
-   write(*,'(A,I5,A,I5,A,I5,A,F14.8,A,F14.8,A,I6)') &
+   write(io,'(A,I5,A,I5,A,I5,A,F14.8,A,F14.8,A,I6)') &
       "Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#", &
       macrogrid_size_x, "&", macrogrid_size_y, "&", subgrid_size, "&", error, "&", time, "&", iter
 
@@ -162,14 +154,14 @@ subroutine print_macrogrid(macrogrid, macrogrid_size, subgrid_size)
    integer :: i, j, x, y
 
    do i = 1, macrogrid_size
-       do y = 1, subgrid_size
-           do j = 1, macrogrid_size
-               do x = 1, subgrid_size
-                   write(*, '(10F8.3)', advance='no') macrogrid(j, i, x, y)
-               end do
-           end do
-           print *, ' '
-       end do
+      do y = 1, subgrid_size
+         do j = 1, macrogrid_size
+            do x = 1, subgrid_size
+               write(*, '(10F8.3)', advance='no') macrogrid(j, i, x, y)
+            end do
+         end do
+         print *, ' '
+      end do
    end do
    print *, ' '
 
@@ -368,7 +360,7 @@ subroutine conjugate_residuals(subgrid_solver, macrogrid,&
 
    integer :: interface_size, i, iX, iY, k
    real(8), dimension((macrogrid_size_x*(macrogrid_size_y-1) + macrogrid_size_y*(macrogrid_size_x-1))*(subgrid_size-2)) :: &
-      b, u_n, u_n1, Au, r_0, r_1, r_n, r_n1, p_0, p_1, p_n, p_n1, Ar_0, Ar_1, Ar_n, Ar_n1, Ap_0, Ap_1, Ap_n, Ap_n1
+      b, u_new, u_old, r_old, r_new, p_old, p_new, Ar_old, Ar_new, Ap_old, Ap_new
 
    real(8) :: alpha, beta, dx, dy, temp0, temp1, subgrid_error, old_value, new_val, start_time, end_time
 
@@ -385,73 +377,66 @@ subroutine conjugate_residuals(subgrid_solver, macrogrid,&
    end do
    call s(macrogrid, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size, b)
 
-   u_n1 = 0.0d0
+   u_old = 0.0d0
 
-   call Cv(subgrid_solver, macrogrid, u_n1, b, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size, omega, eps_subgrid, max_iter_subgrid, Au)
-   r_0 = - b - Au
+   call Cv(subgrid_solver, macrogrid, u_old, b, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size, omega, eps_subgrid, max_iter_subgrid, Ar_old)
+   r_new = - b - Ar_old
 
-   p_0 = r_0
+   p_new = r_new
 
-   call Cv(subgrid_solver, macrogrid, r_0, b, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size, omega, eps_subgrid, max_iter_subgrid, Ar_0)
-   call dot_product(Ar_0, r_0, interface_size, temp0)
-   call dot_product(Ar_0, Ar_0, interface_size, temp1)
+   call Cv(subgrid_solver, macrogrid, r_new, b, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size, omega, eps_subgrid, max_iter_subgrid, Ar_new)
+   call dot_product(Ar_new, r_new, interface_size, temp0)
+   call dot_product(Ar_new, Ar_new, interface_size, temp1)
    alpha = temp0 / temp1
 
-   r_1 = r_0 - alpha * Ar_0
+   r_old = r_new - alpha * Ar_new
 
-   call Cv(subgrid_solver, macrogrid, r_1, b, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size, omega, eps_subgrid, max_iter_subgrid, Ar_1)
-   call dot_product(Ar_1, r_1, interface_size, temp0)
-   call dot_product(Ar_0, r_0, interface_size, temp1)
+   call Cv(subgrid_solver, macrogrid, r_old, b, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size, omega, eps_subgrid, max_iter_subgrid, Ar_old)
+   call dot_product(Ar_old, r_old, interface_size, temp0)
+   call dot_product(Ar_new, r_new, interface_size, temp1)
    beta = temp0 / temp1
 
-   p_1 = r_1 + beta * p_0
-   Ap_1 = Ar_1 + beta * Ar_0
-
-   r_n1 = r_1
-   p_n1 = p_1
-   Ar_n1 = Ar_1
-   Ap_n1 = Ap_1
-   u_n1 = alpha * p_0
+   p_old = r_old + beta * p_new
+   Ap_old = Ar_old + beta * Ar_new
+   u_old = alpha * p_new
 
    do iter = 1, max_iter_interface
 
-      call dot_product(Ar_n1, r_n1, interface_size, temp0)
-      call dot_product(Ap_n1, Ap_n1, interface_size, temp1)
+      call dot_product(Ar_old, r_old, interface_size, temp0)
+      call dot_product(Ap_old, Ap_old, interface_size, temp1)
       alpha = temp0 / temp1
 
-      u_n = u_n1 + alpha * p_n1
+      u_new = u_old + alpha * p_old
 
       interface_error = 0.0d0
       do i = 1, interface_size
-         interface_error = interface_error + dabs(u_n(i) - u_n1(i))
+         interface_error = interface_error + dabs(u_new(i) - u_old(i))
       end do
 
       if (interface_error < eps_interface) then
          exit
       end if
 
-      r_n = r_n1 - alpha * Ap_n1
+      r_new = r_old - alpha * Ap_old
 
-      call Cv(subgrid_solver, macrogrid, r_n, b, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size, omega, eps_subgrid, max_iter_subgrid, Ar_n)
-      call dot_product(Ar_n, r_n, interface_size, temp0)
-      call dot_product(Ar_n1, r_n1, interface_size, temp1)
+      call Cv(subgrid_solver, macrogrid, r_new, b, dx, dy, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size, omega, eps_subgrid, max_iter_subgrid, Ar_new)
+      call dot_product(Ar_new, r_new, interface_size, temp0)
+      call dot_product(Ar_old, r_old, interface_size, temp1)
       beta = temp0 / temp1
 
-      p_n = r_n + beta * p_n1
-      Ap_n = Ar_n + beta * Ap_n1
+      p_old = r_new + beta * p_old
+      Ap_old = Ar_new + beta * Ap_old
 
-      r_n1 = r_n
-      p_n1 = p_n
-      Ar_n1 = Ar_n
-      Ap_n1 = Ap_n
-      u_n1 = u_n
+      r_old = r_new
+      Ar_old = Ar_new
+      u_old = u_new
 
    end do
 
    call cpu_time(end_time)
    time = end_time - start_time
 
-   call set_interface(macrogrid, u_n, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size)
+   call set_interface(macrogrid, u_new, macrogrid_size_x, macrogrid_size_y, subgrid_size, interface_size)
    do iX = 1, macrogrid_size_x
       do iY = 1, macrogrid_size_y
          call subgrid_solver(macrogrid(iX,iY,:,:), subgrid_size, &
