@@ -33,7 +33,8 @@ program macrogrid_solver
    real*8  :: omega, time, error
 
    external :: simple_iteration, conjugate_residuals
-   external :: original_sor, tiling_sor, subtiling_sor, subtiling_sor_test_version, subtiling_sor_4
+   external :: original_sor, tiling_sor, subtiling_sor, subtiling_sor_test_version
+   external :: subtiling_sor_4, subtiling_sor_8, subtiling_sor_16
    external :: initialize_constant_boundary, initialize_logarithmic_boundary
    external :: compute_constant_boundary_error, compute_logarithmic_boundary_error
 
@@ -112,6 +113,38 @@ program macrogrid_solver
          sub_sz = subgrid_sizes(subgrid_configs(i_size))
          omega = factors_log(subgrid_configs(i_size))
          call run_test(io, conjugate_residuals, subtiling_sor_4, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
+      end do
+   end do
+   write(io, *) " "
+
+   write(io, *) "conjugate_residuals with subtiling_sor_8"
+   do i_cfg = 1, MACRIGRID_CFGS_COUNT
+      cfg_x = macrogrid_configs(1, i_cfg)
+      cfg_y = macrogrid_configs(2, i_cfg)
+      do i_size = 1, SUBGRID_CFGS_COUNT
+         sub_sz = subgrid_sizes(subgrid_configs(i_size))
+         if (sub_sz == 10) then
+            cycle
+         end if
+         omega = factors_log(subgrid_configs(i_size))
+         call run_test(io, conjugate_residuals, subtiling_sor_8, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
+            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
+      end do
+   end do
+   write(io, *) " "
+
+   write(io, *) "conjugate_residuals with subtiling_sor_16"
+   do i_cfg = 1, MACRIGRID_CFGS_COUNT
+      cfg_x = macrogrid_configs(1, i_cfg)
+      cfg_y = macrogrid_configs(2, i_cfg)
+      do i_size = 1, SUBGRID_CFGS_COUNT
+         sub_sz = subgrid_sizes(subgrid_configs(i_size))
+         if (sub_sz == 10 .or. sub_sz == 18) then
+            cycle
+         end if
+         omega = factors_log(subgrid_configs(i_size))
+         call run_test(io, conjugate_residuals, subtiling_sor_16, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
             macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
       end do
    end do
@@ -1588,3 +1621,2191 @@ subroutine subtiling_sor_4(u, u_size, factor, eps, max_iter, error, dx, dy)
       end if
    end do
 end subroutine subtiling_sor_4
+
+subroutine subtiling_sor_8(u, u_size, factor, eps, max_iter, error, dx, dy)
+   implicit none
+   integer, parameter :: tile_level = 8
+   integer :: tile_size = 8
+   integer, intent(in) :: u_size, max_iter
+   real*8,  intent(in) :: factor, eps, dx, dy
+   real*8,  intent(inout) :: u(u_size*u_size)
+   real*8,  intent(out)   :: error
+   integer :: tile_count, iter, i, l0, l1, l2, l3, l4
+   real*8 :: invdx2, invdy2, f0, f1, u_old
+   tile_count = (u_size - 2)/tile_size
+   invdx2 = 1.0d0/(dx*dx)
+   invdy2 = 1.0d0/(dy*dy)
+   f0 = 1.0d0 - factor
+   f1 = factor / (2.0d0*invdx2 + 2.0d0*invdy2)
+   do iter = 1, max_iter
+      error = 0.0d0
+      i = u_size + 2
+      do l1 = 1, tile_size - 0
+         do l0 = 1, tile_size - 0
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 1
+         do l0 = 1, tile_size - 1
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 2
+         do l0 = 1, tile_size - 2
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 3
+         do l0 = 1, tile_size - 3
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 4
+         do l0 = 1, tile_size - 4
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 5
+         do l0 = 1, tile_size - 5
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 6
+         do l0 = 1, tile_size - 6
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 7
+         do l0 = 1, tile_size - 7
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 8
+         do l0 = 1, tile_size - 8
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            error = error + Abs(u_old - u(i))
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i + tile_size - u_size*(l1 - 1)
+      do l3 = 2, tile_count - 1
+         do l1 = 1, tile_size - 0
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 1
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 2
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 3
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 4
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 5
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 6
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 7
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 8
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               error = error + Abs(u_old - u(i))
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i + tile_level + tile_size - u_size*(l1 - 1)
+      end do
+      do l1 = 1, tile_size - 0
+         do l0 = 1, tile_size + 0
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 1
+         do l0 = 1, tile_size + 1
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 2
+         do l0 = 1, tile_size + 2
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 3
+         do l0 = 1, tile_size + 3
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 4
+         do l0 = 1, tile_size + 4
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 5
+         do l0 = 1, tile_size + 5
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 6
+         do l0 = 1, tile_size + 6
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 7
+         do l0 = 1, tile_size + 7
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 8
+         do l0 = 1, tile_size + 8
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            error = error + Abs(u_old - u(i))
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size + tile_level + tile_size*u_size + tile_size + 2
+      do l4 = 2, tile_count - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 0
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 1
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 2
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 3
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 4
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 5
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 6
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 7
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 8
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               error = error + Abs(u_old - u(i))
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size + tile_size + u_size*(tile_level + 1)
+         do l3 = 2, tile_count - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  error = error + Abs(u_old - u(i))
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size + tile_level + tile_size + u_size*(tile_level + 1)
+         end do
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 0
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 1
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 2
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 3
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 4
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 5
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 6
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 7
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 8
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               error = error + Abs(u_old - u(i))
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size + tile_level*u_size + tile_level + tile_size*u_size + tile_size + 2
+      end do
+      do l1 = 1, tile_size + 0
+         do l0 = 1, tile_size - 0
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 1
+         do l0 = 1, tile_size - 1
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 2
+         do l0 = 1, tile_size - 2
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 3
+         do l0 = 1, tile_size - 3
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 4
+         do l0 = 1, tile_size - 4
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 5
+         do l0 = 1, tile_size - 5
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 6
+         do l0 = 1, tile_size - 6
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 7
+         do l0 = 1, tile_size - 7
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 8
+         do l0 = 1, tile_size - 8
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            error = error + Abs(u_old - u(i))
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size + tile_size + u_size*(tile_level + 1)
+      do l3 = 2, tile_count - 1
+         do l1 = 1, tile_size + 0
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 1
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 2
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 3
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 4
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 5
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 6
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 7
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 8
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               error = error + Abs(u_old - u(i))
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size + tile_level + tile_size + u_size*(tile_level + 1)
+      end do
+      do l1 = 1, tile_size + 0
+         do l0 = 1, tile_size + 0
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 1
+         do l0 = 1, tile_size + 1
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 2
+         do l0 = 1, tile_size + 2
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 3
+         do l0 = 1, tile_size + 3
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 4
+         do l0 = 1, tile_size + 4
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 5
+         do l0 = 1, tile_size + 5
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 6
+         do l0 = 1, tile_size + 6
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 7
+         do l0 = 1, tile_size + 7
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 8
+         do l0 = 1, tile_size + 8
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            error = error + Abs(u_old - u(i))
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      if (error < eps) then
+         return
+      end if
+   end do
+end subroutine subtiling_sor_8
+
+subroutine subtiling_sor_16(u, u_size, factor, eps, max_iter, error, dx, dy)
+   implicit none
+   integer, parameter :: tile_level = 16
+   integer :: tile_size = 16
+   integer, intent(in) :: u_size, max_iter
+   real*8,  intent(in) :: factor, eps, dx, dy
+   real*8,  intent(inout) :: u(u_size*u_size)
+   real*8,  intent(out)   :: error
+   integer :: tile_count, iter, i, l0, l1, l2, l3, l4
+   real*8 :: invdx2, invdy2, f0, f1, u_old
+   tile_count = (u_size - 2)/tile_size
+   invdx2 = 1.0d0/(dx*dx)
+   invdy2 = 1.0d0/(dy*dy)
+   f0 = 1.0d0 - factor
+   f1 = factor / (2.0d0*invdx2 + 2.0d0*invdy2)
+   do iter = 1, max_iter
+      error = 0.0d0
+      i = u_size + 2
+      do l1 = 1, tile_size - 0
+         do l0 = 1, tile_size - 0
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 1
+         do l0 = 1, tile_size - 1
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 2
+         do l0 = 1, tile_size - 2
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 3
+         do l0 = 1, tile_size - 3
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 4
+         do l0 = 1, tile_size - 4
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 5
+         do l0 = 1, tile_size - 5
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 6
+         do l0 = 1, tile_size - 6
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 7
+         do l0 = 1, tile_size - 7
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 8
+         do l0 = 1, tile_size - 8
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 9
+         do l0 = 1, tile_size - 9
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 10
+         do l0 = 1, tile_size - 10
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 11
+         do l0 = 1, tile_size - 11
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 12
+         do l0 = 1, tile_size - 12
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 13
+         do l0 = 1, tile_size - 13
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 14
+         do l0 = 1, tile_size - 14
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 15
+         do l0 = 1, tile_size - 15
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1)
+      do l1 = 1, tile_size - 16
+         do l0 = 1, tile_size - 16
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            error = error + Abs(u_old - u(i))
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i + tile_size - u_size*(l1 - 1)
+      do l3 = 2, tile_count - 1
+         do l1 = 1, tile_size - 0
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 1
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 2
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 3
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 4
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 5
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 6
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 7
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 8
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 9
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 10
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 11
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 12
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 13
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 14
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 15
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - u_size*(l1 - 1) - 1
+         do l1 = 1, tile_size - 16
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               error = error + Abs(u_old - u(i))
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i + tile_level + tile_size - u_size*(l1 - 1)
+      end do
+      do l1 = 1, tile_size - 0
+         do l0 = 1, tile_size + 0
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 1
+         do l0 = 1, tile_size + 1
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 2
+         do l0 = 1, tile_size + 2
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 3
+         do l0 = 1, tile_size + 3
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 4
+         do l0 = 1, tile_size + 4
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 5
+         do l0 = 1, tile_size + 5
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 6
+         do l0 = 1, tile_size + 6
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 7
+         do l0 = 1, tile_size + 7
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 8
+         do l0 = 1, tile_size + 8
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 9
+         do l0 = 1, tile_size + 9
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 10
+         do l0 = 1, tile_size + 10
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 11
+         do l0 = 1, tile_size + 11
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 12
+         do l0 = 1, tile_size + 12
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 13
+         do l0 = 1, tile_size + 13
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 14
+         do l0 = 1, tile_size + 14
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 15
+         do l0 = 1, tile_size + 15
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - u_size*(l1 - 1) - 1
+      do l1 = 1, tile_size - 16
+         do l0 = 1, tile_size + 16
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            error = error + Abs(u_old - u(i))
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size + tile_level + tile_size*u_size + tile_size + 2
+      do l4 = 2, tile_count - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 0
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 1
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 2
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 3
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 4
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 5
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 6
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 7
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 8
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 9
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 10
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 11
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 12
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 13
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 14
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 15
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size - 16
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               error = error + Abs(u_old - u(i))
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size + tile_size + u_size*(tile_level + 1)
+         do l3 = 2, tile_count - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size - 1
+            do l1 = 1, tile_size
+               do l0 = 1, tile_size
+                  u_old = u(i)
+                  u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+                  error = error + Abs(u_old - u(i))
+                  i = i + 1
+               end do
+               i = i - l0 + u_size + 1
+            end do
+            i = i - l1*u_size + tile_level + tile_size + u_size*(tile_level + 1)
+         end do
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 0
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 1
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 2
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 3
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 4
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 5
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 6
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 7
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 8
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 9
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 10
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 11
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 12
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 13
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 14
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 15
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size
+            do l0 = 1, tile_size + 16
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               error = error + Abs(u_old - u(i))
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size + tile_level*u_size + tile_level + tile_size*u_size + tile_size + 2
+      end do
+      do l1 = 1, tile_size + 0
+         do l0 = 1, tile_size - 0
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 1
+         do l0 = 1, tile_size - 1
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 2
+         do l0 = 1, tile_size - 2
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 3
+         do l0 = 1, tile_size - 3
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 4
+         do l0 = 1, tile_size - 4
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 5
+         do l0 = 1, tile_size - 5
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 6
+         do l0 = 1, tile_size - 6
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 7
+         do l0 = 1, tile_size - 7
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 8
+         do l0 = 1, tile_size - 8
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 9
+         do l0 = 1, tile_size - 9
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 10
+         do l0 = 1, tile_size - 10
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 11
+         do l0 = 1, tile_size - 11
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 12
+         do l0 = 1, tile_size - 12
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 13
+         do l0 = 1, tile_size - 13
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 14
+         do l0 = 1, tile_size - 14
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 15
+         do l0 = 1, tile_size - 15
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size
+      do l1 = 1, tile_size + 16
+         do l0 = 1, tile_size - 16
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            error = error + Abs(u_old - u(i))
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size + tile_size + u_size*(tile_level + 1)
+      do l3 = 2, tile_count - 1
+         do l1 = 1, tile_size + 0
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 1
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 2
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 3
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 4
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 5
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 6
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 7
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 8
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 9
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 10
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 11
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 12
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 13
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 14
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 15
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size - 1
+         do l1 = 1, tile_size + 16
+            do l0 = 1, tile_size
+               u_old = u(i)
+               u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+               error = error + Abs(u_old - u(i))
+               i = i + 1
+            end do
+            i = i - l0 + u_size + 1
+         end do
+         i = i - l1*u_size + tile_level + tile_size + u_size*(tile_level + 1)
+      end do
+      do l1 = 1, tile_size + 0
+         do l0 = 1, tile_size + 0
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 1
+         do l0 = 1, tile_size + 1
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 2
+         do l0 = 1, tile_size + 2
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 3
+         do l0 = 1, tile_size + 3
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 4
+         do l0 = 1, tile_size + 4
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 5
+         do l0 = 1, tile_size + 5
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 6
+         do l0 = 1, tile_size + 6
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 7
+         do l0 = 1, tile_size + 7
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 8
+         do l0 = 1, tile_size + 8
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 9
+         do l0 = 1, tile_size + 9
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 10
+         do l0 = 1, tile_size + 10
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 11
+         do l0 = 1, tile_size + 11
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 12
+         do l0 = 1, tile_size + 12
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 13
+         do l0 = 1, tile_size + 13
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 14
+         do l0 = 1, tile_size + 14
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 15
+         do l0 = 1, tile_size + 15
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      do l1 = 1, tile_size + 16
+         do l0 = 1, tile_size + 16
+            u_old = u(i)
+            u(i) = f0*u_old + f1*((u(i-1) + u(i+1))*invdx2 + (u(i-u_size) + u(i+u_size))*invdy2)
+            error = error + Abs(u_old - u(i))
+            i = i + 1
+         end do
+         i = i - l0 + u_size + 1
+      end do
+      i = i - l1*u_size - 1
+      if (error < eps) then
+         return
+      end if
+   end do
+end subroutine subtiling_sor_16
