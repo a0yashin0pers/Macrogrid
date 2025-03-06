@@ -1,6 +1,24 @@
- conjugate_residuals with subtiling_sor
-Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000019&   20.44791300&   159
+ simple_iteration_one_iter with original_sor
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000617&   18.39233000& 12548
   
  simple_iteration_one_iter with tiling_sor
-Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000617&   25.87900800& 12548
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000617&   13.34644100& 12548
+  
+ conjugate_residuals with original_sor
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000013&   32.45952200&   159
+  
+ conjugate_residuals with tiling_sor
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000012&   13.91558500&   159
+  
+ conjugate_residuals with subtiling_sor
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000019&    8.68742900&   159
+  
+ conjugate_residuals with subtiling_sor_4
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000019&    8.53865100&   159
+  
+ conjugate_residuals with subtiling_sor_8
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000022&   10.33194600&   159
+  
+ conjugate_residuals with subtiling_sor_16
+Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#    4&    4&  130&    0.00000014&   21.20802900&   159
   
