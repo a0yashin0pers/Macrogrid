@@ -12,7 +12,7 @@
                 ],
                 "options": {
                     "env": {
-                        "IFX_FLAGS": "-xHost"
+                        "IFX_FLAGS": "-O3 -xHost -qopenmp"
                     }
                 }
             },

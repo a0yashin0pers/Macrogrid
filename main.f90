@@ -31,11 +31,11 @@ program main
    real*8,  parameter :: eps_subgrid        = 1.0d-5
    real*8,  parameter :: eps_interface      = 1.0d-5
 
-   real*8 :: macrogrid(10, 10, 1026, 1026)
-
+   real*8, allocatable :: macrogrid(:, :, :, :)
    integer :: i_cfg, i_size, cfg_x, cfg_y, sub_sz, iter
    real*8  :: omega, time, error
 
+   allocate(macrogrid(10, 10, 1026, 1026))
    open(io, file='results.txt', status='unknown', action='write')
 
    write(io, *) "simple_iteration_one_iter with original_sor"
@@ -97,57 +97,13 @@ program main
       do i_size = 1, SUBGRID_CFGS_COUNT
          sub_sz = subgrid_sizes(subgrid_configs(i_size))
          omega = factors_log(subgrid_configs(i_size))
-         call run_test(io, conjugate_residuals, subtiling_sor, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
-            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
-      end do
-   end do
-   write(io, *) " "
-
-   write(io, *) "conjugate_residuals with subtiling_sor_4"
-   do i_cfg = 1, MACRIGRID_CFGS_COUNT
-      cfg_x = macrogrid_configs(1, i_cfg)
-      cfg_y = macrogrid_configs(2, i_cfg)
-      do i_size = 1, SUBGRID_CFGS_COUNT
-         sub_sz = subgrid_sizes(subgrid_configs(i_size))
-         omega = factors_log(subgrid_configs(i_size))
          call run_test(io, conjugate_residuals, subtiling_sor_4, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
             macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
       end do
    end do
    write(io, *) " "
 
-   write(io, *) "conjugate_residuals with subtiling_sor_8"
-   do i_cfg = 1, MACRIGRID_CFGS_COUNT
-      cfg_x = macrogrid_configs(1, i_cfg)
-      cfg_y = macrogrid_configs(2, i_cfg)
-      do i_size = 1, SUBGRID_CFGS_COUNT
-         sub_sz = subgrid_sizes(subgrid_configs(i_size))
-         if (sub_sz == 10) then
-            cycle
-         end if
-         omega = factors_log(subgrid_configs(i_size))
-         call run_test(io, conjugate_residuals, subtiling_sor_8, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
-            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
-      end do
-   end do
-   write(io, *) " "
-
-   write(io, *) "conjugate_residuals with subtiling_sor_16"
-   do i_cfg = 1, MACRIGRID_CFGS_COUNT
-      cfg_x = macrogrid_configs(1, i_cfg)
-      cfg_y = macrogrid_configs(2, i_cfg)
-      do i_size = 1, SUBGRID_CFGS_COUNT
-         sub_sz = subgrid_sizes(subgrid_configs(i_size))
-         if (sub_sz == 10 .or. sub_sz == 18) then
-            cycle
-         end if
-         omega = factors_log(subgrid_configs(i_size))
-         call run_test(io, conjugate_residuals, subtiling_sor_16, initialize_logarithmic_boundary, compute_logarithmic_boundary_error, &
-            macrogrid, cfg_x, cfg_y, sub_sz, omega, eps_subgrid, eps_interface, max_iter_subgrid, max_iter_interface)
-      end do
-   end do
-   write(io, *) " "
-
+   deallocate(macrogrid)
    close(io)
 
 end program main
