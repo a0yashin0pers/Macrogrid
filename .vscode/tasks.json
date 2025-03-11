@@ -2,7 +2,57 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Compile and Run Fortran",
+            "label": "Compile and Run Fortran project",
+            "type": "shell",
+            "linux": {
+                "command": "bash",
+                "args": [
+                    "-c",
+                    "mkdir -p build && ifx $IFX_FLAGS -module build *.f90 -o build/main && ./build/main"
+                ],
+                "options": {
+                    "env": {
+                        "IFX_FLAGS": "-xHost"
+                    }
+                }
+            },
+            "windows": {
+                "command": "cmd.exe",
+                "args": [
+                    "/c",
+                    "mkdir build 2>nul & call \"C:\\Program Files (x86)\\Intel\\oneAPI\\setvars.bat\" >nul 2>&1 && ifx /nologo ${env:IFX_FLAGS} /module:build /exe:build\\main *.f90 && build\\main"
+                ],
+                "options": {
+                    "shell": {
+                        "executable": "cmd.exe",
+                        "args": ["/c"]
+                    },
+                    "env": {
+                        "IFX_FLAGS": ""
+                    }
+                }
+            },
+            "osx": {
+                "command": "bash",
+                "args": [
+                    "-c",
+                    "mkdir -p build && gfortran $GFORTRAN_FLAGS -Jbuild *.f90 -o build/main && ./build/main"
+                ],
+                "options": {
+                    "env": {
+                        "GFORTRAN_FLAGS": "-march=native"
+                    }
+                }
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
+            "problemMatcher": [],
+            "detail": "Компиляция и запуск Fortran проекта"
+        },
+        {
+            "label": "Compile and Run current Fortran",
             "type": "shell",
             "linux": {
                 "command": "bash",
@@ -52,7 +102,7 @@
                 "isDefault": true
             },
             "problemMatcher": [],
-            "detail": "Компиляция и запуск Fortran программы"
+            "detail": "Компиляция и запуск текущей Fortran программы"
         }
     ]
 }
