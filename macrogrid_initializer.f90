@@ -1,44 +1,14 @@
 module macrogrid_initializer
    implicit none
 
+   public :: initialize_boundary
    public :: initialize_constant_boundary
-   public :: initialize_logarithmic_boundary
+   public :: compute_boundary_error
    public :: compute_constant_boundary_error
-   public :: compute_logarithmic_boundary_error
 
 contains
 
-   subroutine initialize_constant_boundary(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
-      implicit none
-      integer, intent(in) :: macrogrid_size_x, macrogrid_size_y, subgrid_size
-      real*8,  intent(inout) :: macrogrid(macrogrid_size_x,macrogrid_size_y,subgrid_size,subgrid_size)
-
-      integer :: global_size_x, global_size_y
-      integer :: iX, iY, i1, j1, lX, lY
-
-      global_size_x = macrogrid_size_x * subgrid_size - (macrogrid_size_x - 1)
-      global_size_y = macrogrid_size_y * subgrid_size - (macrogrid_size_y - 1)
-
-      do iX = 1, macrogrid_size_x
-         do iY = 1, macrogrid_size_y
-            do i1 = 1, subgrid_size
-               do j1 = 1, subgrid_size
-                  lX = i1 + (iX-1)*subgrid_size - (iX-1)
-                  lY = j1 + (iY-1)*subgrid_size - (iY-1)
-
-                  if (lX == 1 .or. lX == global_size_x .or. &
-                     lY == 1 .or. lY == global_size_y) then
-                     macrogrid(iX, iY, i1, j1) = 1.0d0
-                  else
-                     macrogrid(iX, iY, i1, j1) = 0.0d0
-                  end if
-               end do
-            end do
-         end do
-      end do
-   end subroutine initialize_constant_boundary
-
-   subroutine initialize_logarithmic_boundary(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
+   subroutine initialize_boundary(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
       implicit none
       real*8, parameter :: R1 = 0.1d0, R2 = 1.0d0
       real*8, parameter :: x_min = 0.3d0, y_min = 0.0d0
@@ -75,33 +45,41 @@ contains
             end do
          end do
       end do
-   end subroutine initialize_logarithmic_boundary
+      
+   end subroutine initialize_boundary
 
-   subroutine compute_constant_boundary_error(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, error)
+   subroutine initialize_constant_boundary(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
       implicit none
       integer, intent(in) :: macrogrid_size_x, macrogrid_size_y, subgrid_size
-      real*8,  intent(in) :: macrogrid(macrogrid_size_x,macrogrid_size_y,subgrid_size,subgrid_size)
-      real*8,  intent(out) :: error
+      real*8,  intent(inout) :: macrogrid(macrogrid_size_x,macrogrid_size_y,subgrid_size,subgrid_size)
 
-      integer :: iX, iY, i1, j1
-      real*8  :: diff
+      integer :: global_size_x, global_size_y
+      integer :: iX, iY, i1, j1, lX, lY
 
-      error = 0.0d0
+      global_size_x = macrogrid_size_x * subgrid_size - (macrogrid_size_x - 1)
+      global_size_y = macrogrid_size_y * subgrid_size - (macrogrid_size_y - 1)
 
       do iX = 1, macrogrid_size_x
          do iY = 1, macrogrid_size_y
             do i1 = 1, subgrid_size
                do j1 = 1, subgrid_size
-                  diff = abs(macrogrid(iX,iY,i1,j1) - 1.0d0)
-                  if (diff > error) error = diff
+                  lX = i1 + (iX-1)*subgrid_size - (iX-1)
+                  lY = j1 + (iY-1)*subgrid_size - (iY-1)
+
+                  if (lX == 1 .or. lX == global_size_x .or. &
+                     lY == 1 .or. lY == global_size_y) then
+                     macrogrid(iX, iY, i1, j1) = 1.0d0
+                  else
+                     macrogrid(iX, iY, i1, j1) = 0.0d0
+                  end if
                end do
             end do
          end do
       end do
 
-   end subroutine compute_constant_boundary_error
+   end subroutine initialize_constant_boundary
 
-   subroutine compute_logarithmic_boundary_error(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, error)
+   subroutine compute_boundary_error(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, error)
       implicit none
       real*8, parameter :: R1 = 0.1d0, R2 = 1.0d0
       real*8, parameter :: x_min = 0.3d0, y_min = 0.0d0
@@ -138,6 +116,30 @@ contains
          end do
       end do
 
-   end subroutine compute_logarithmic_boundary_error
+   end subroutine compute_boundary_error
+
+   subroutine compute_constant_boundary_error(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, error)
+      implicit none
+      integer, intent(in) :: macrogrid_size_x, macrogrid_size_y, subgrid_size
+      real*8,  intent(in) :: macrogrid(macrogrid_size_x,macrogrid_size_y,subgrid_size,subgrid_size)
+      real*8,  intent(out) :: error
+
+      integer :: iX, iY, i1, j1
+      real*8  :: diff
+
+      error = 0.0d0
+
+      do iX = 1, macrogrid_size_x
+         do iY = 1, macrogrid_size_y
+            do i1 = 1, subgrid_size
+               do j1 = 1, subgrid_size
+                  diff = abs(macrogrid(iX,iY,i1,j1) - 1.0d0)
+                  if (diff > error) error = diff
+               end do
+            end do
+         end do
+      end do
+
+   end subroutine compute_constant_boundary_error
 
 end module macrogrid_initializer

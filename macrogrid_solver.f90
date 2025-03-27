@@ -78,6 +78,12 @@ contains
       res_iter = iter
    end subroutine get_results
 
+   subroutine get_omega(res_omega)
+      implicit none
+      real*8, intent(out) :: res_omega
+      res_omega = omega
+   end subroutine get_omega
+
    subroutine compute_subgrids()
       implicit none
       integer :: iX, iY
