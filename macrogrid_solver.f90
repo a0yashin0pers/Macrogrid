@@ -205,7 +205,7 @@ contains
                   macrogrid(iX, iY, k, subgrid_size) = new_val
                   macrogrid(iX, iY+1, k, 1) = new_val
 
-                  norm2 = norm2 + (new_val - old_value)*(new_val - old_value)
+                  norm2 = norm2 + dabs(new_val - old_value)
                   interface_error = interface_error + dabs(new_val - old_value)
 
                end do
@@ -226,7 +226,7 @@ contains
                   macrogrid(iX, iY, subgrid_size, k) = new_val
                   macrogrid(iX+1, iY, 1, k) = new_val
 
-                  norm2 = norm2 + (new_val - old_value)*(new_val - old_value)
+                  norm2 = norm2 + dabs(new_val - old_value)
                   interface_error = interface_error + dabs(new_val - old_value)
 
                end do
