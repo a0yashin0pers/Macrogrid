@@ -13,20 +13,19 @@ program main
    real*8, dimension(8), parameter :: subgrid_omegas_const = &
       [1.52729d0, 1.69504d0, 1.82964d0, 1.90932d0, 1.95305d0, 1.97616d0, 1.98798d0, 1.99394d0]
 
-   integer, dimension(4), parameter :: subgrid_configs = &
-      [1, 2, 3, 4]
+   integer, dimension(3), parameter :: subgrid_configs = &
+      [1, 2, 3]
 
    integer, dimension(8), parameter :: macrogrid_sizes = &
       [1, 2, 3, 4, 5, 6, 7, 8]
-   real*8, dimension(8), parameter :: macrogrid_omegas = &
-      [1.52129d0, 1.69524d0, 1.82919d0, 1.90899d0, 1.95307d0, 1.97618d0, 1.98793d0, 1.99403d0]
-   real*8, dimension(8), parameter :: macrogrid_omegas_const = &
-      [1.52729d0, 1.69504d0, 1.82964d0, 1.90932d0, 1.95305d0, 1.97616d0, 1.98798d0, 1.99394d0]
 
    integer, dimension(2), parameter :: macrogrid_configs = &
       [2, 4]
 
    integer :: mac_cfg, sub_cfg
+   real*8 :: omega
+
+   omega = 1.0d0
 
    write(*, *) "Running tests"
 
@@ -40,7 +39,7 @@ program main
             eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
             max_iter_interface = 100000, max_iter_subgrid = 1, &
             macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = 4, subtile_level = 4)
+            macrogrid_omega = omega, tile_size = 8, subtile_level = 8)
 
       end do
    end do
@@ -54,35 +53,23 @@ program main
             eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
             max_iter_interface = 100000, max_iter_subgrid = 1, &
             macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = 4, subtile_level = 4)
+            macrogrid_omega = omega, tile_size = 8, subtile_level = 8)
 
       end do
    end do
    write(io, *) " "
 
-   write(io, *) "conjugate_residuals with tiling_sor"
+   write(io, *) "sor_fixed_omega with tiling_sor"
    do mac_cfg = 1, size(macrogrid_configs)
       do sub_cfg = 1, size(subgrid_configs)
 
-         call run_test(macrogrid_solver_method = conjugate_residuals, subgrid_solver_method = tiling_sor, &
-            eps_subgrid = 1.0d-5, eps_interface = 1.0d-5, &
-            max_iter_interface = 100000, max_iter_subgrid = 100000, &
+         call golden_section(macrogrid_configs(mac_cfg), subgrid_configs(sub_cfg), omega)
+
+         call run_test(macrogrid_solver_method = sor_fixed_omega, subgrid_solver_method = tiling_sor, &
+            eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
+            max_iter_interface = 100000, max_iter_subgrid = 1, &
             macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = 4, subtile_level = 4)
-
-      end do
-   end do
-   write(io, *) " "
-
-   write(io, *) "conjugate_residuals with subtiling_sor"
-   do mac_cfg = 1, size(macrogrid_configs)
-      do sub_cfg = 1, size(subgrid_configs)
-
-         call run_test(macrogrid_solver_method = conjugate_residuals, subgrid_solver_method = subtiling_sor, &
-            eps_subgrid = 1.0d-5, eps_interface = 1.0d-5, &
-            max_iter_interface = 100000, max_iter_subgrid = 100000, &
-            macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = 4, subtile_level = 4)
+            macrogrid_omega = omega, tile_size = 8, subtile_level = 8)
 
       end do
    end do
@@ -96,13 +83,14 @@ contains
 
    subroutine run_test(macrogrid_solver_method, subgrid_solver_method, &
       eps_subgrid, eps_interface, max_iter_interface, max_iter_subgrid, &
-      macrogrid_size_idx, subgrid_size_idx, tile_size, subtile_level)
+      macrogrid_size_idx, subgrid_size_idx, macrogrid_omega, tile_size, subtile_level)
       implicit none
       procedure(interface_macrogrid_solver_method) :: macrogrid_solver_method
       procedure(interface_subgrid_solver_method) :: subgrid_solver_method
       integer, intent(in) :: macrogrid_size_idx, subgrid_size_idx
       integer, intent(in) :: tile_size, subtile_level
       real*8, intent(in) :: eps_subgrid, eps_interface
+      real*8, intent(inout) :: macrogrid_omega
       integer, intent(in) :: max_iter_interface, max_iter_subgrid
 
       real*8, allocatable :: macrogrid(:, :, :, :)
@@ -120,7 +108,7 @@ contains
          subgrid_omegas(subgrid_size_idx), tile_size, subtile_level)
 
       call configure_macrogrid_solver(eps_interface, max_iter_interface, &
-         macrogrid_omegas(macrogrid_size_idx))
+         macrogrid_omega)
 
       call run(macrogrid, macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
          subgrid_sizes(subgrid_size_idx), macrogrid_solver_method, subgrid_solver_method)
@@ -131,9 +119,11 @@ contains
          macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
          subgrid_sizes(subgrid_size_idx), error)
 
-      write(io,*) "Macrogrid_size&Subgrid_size&Error&Run_time&Iterations#", &
+      call get_omega(macrogrid_omega)
+
+      write(io,*) "Macrogrid_size&Subgrid_size&Error&Run_time&Iterations&Omega#", &
          macrogrid_sizes(macrogrid_size_idx), "&", subgrid_sizes(subgrid_size_idx), &
-         "&", error, "&", time, "&", iter
+         "&", error, "&", time, "&", iter, "&", macrogrid_omega
 
       deallocate(macrogrid)
 

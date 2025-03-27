@@ -16,7 +16,7 @@ module macrogrid_solver
    end interface
 
    public :: interface_macrogrid_solver_method, interface_subgrid_solver_method
-   public :: run, configure_macrogrid_solver, get_results
+   public :: run, configure_macrogrid_solver, get_results, get_omega
 
    public :: simple_iteration
    public :: sor, sor_fixed_omega
