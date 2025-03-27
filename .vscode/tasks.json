@@ -2,17 +2,18 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Compile and Run Fortran project",
+            "label": "Build and Run Fortran Project",
             "type": "shell",
             "linux": {
                 "command": "bash",
                 "args": [
                     "-c",
-                    "mkdir -p build && ifx $IFX_FLAGS -module build *.f90 -o build/main && ./build/main"
+                    "mkdir -p build && ifx $IFX_FLAGS -module build $FORTRAN_SOURCES -o build/main && ./build/main"
                 ],
                 "options": {
                     "env": {
-                        "IFX_FLAGS": "-O3 -xHost -qopenmp"
+                        "IFX_FLAGS": "-O3 -xHost -qopenmp",
+                        "FORTRAN_SOURCES": "macrogrid_initializer.f90 subgrid_solver.f90 macrogrid_solver.f90 main.f90"
                     }
                 }
             },
@@ -20,7 +21,7 @@
                 "command": "cmd.exe",
                 "args": [
                     "/c",
-                    "mkdir build 2>nul & call \"C:\\Program Files (x86)\\Intel\\oneAPI\\setvars.bat\" >nul 2>&1 && ifx /nologo ${env:IFX_FLAGS} /module:build /exe:build\\main *.f90 && build\\main"
+                    "mkdir build 2>nul & call \"C:\\Program Files (x86)\\Intel\\oneAPI\\setvars.bat\" >nul 2>&1 && ifx /nologo /module:build /object:build\\ /exe:build\\main.exe %FORTRAN_SOURCES% && build\\main.exe"
                 ],
                 "options": {
                     "shell": {
@@ -28,7 +29,8 @@
                         "args": ["/c"]
                     },
                     "env": {
-                        "IFX_FLAGS": ""
+                        "IFX_FLAGS": "-O3 -xHost -qopenmp",
+                        "FORTRAN_SOURCES": "macrogrid_initializer.f90 subgrid_solver.f90 macrogrid_solver.f90 main.f90"
                     }
                 }
             },
@@ -36,11 +38,12 @@
                 "command": "bash",
                 "args": [
                     "-c",
-                    "mkdir -p build && gfortran $GFORTRAN_FLAGS -Jbuild *.f90 -o build/main && ./build/main"
+                    "mkdir -p build && gfortran $GFORTRAN_FLAGS -Jbuild $FORTRAN_SOURCES -o build/main && ./build/main"
                 ],
                 "options": {
                     "env": {
-                        "GFORTRAN_FLAGS": "-march=native"
+                        "GFORTRAN_FLAGS": "-O3 -march=native",
+                        "FORTRAN_SOURCES": "macrogrid_initializer.f90 subgrid_solver.f90 macrogrid_solver.f90 main.f90"
                     }
                 }
             },
@@ -49,10 +52,10 @@
                 "isDefault": true
             },
             "problemMatcher": [],
-            "detail": "Компиляция и запуск Fortran проекта"
+            "detail": "Сборка и запуск Fortran проекта"
         },
         {
-            "label": "Compile and Run current Fortran",
+            "label": "Build and Run Current Fortran File",
             "type": "shell",
             "linux": {
                 "command": "bash",
@@ -63,7 +66,7 @@
                 "options": {
                     "cwd": "${workspaceFolder}",
                     "env": {
-                        "IFX_FLAGS": "-xHost"
+                        "IFX_FLAGS": "-O3 -xHost -qopenmp"
                     }
                 }
             },
@@ -71,7 +74,7 @@
                 "command": "cmd.exe",
                 "args": [
                     "/c",
-                    "mkdir build 2>nul & call \"C:\\Program Files (x86)\\Intel\\oneAPI\\setvars.bat\" >nul 2>&1 && ifx /nologo ${env:IFX_FLAGS} /module:build /object:build\\${fileBasenameNoExtension}.obj \"${file}\" -o \"build\\${fileBasenameNoExtension}.exe\" && \"build\\${fileBasenameNoExtension}.exe\""
+                    "mkdir build 2>nul & call \"C:\\Program Files (x86)\\Intel\\oneAPI\\setvars.bat\" >nul 2>&1 && ifx /nologo %IFX_FLAGS% /module:build /object:build\\${fileBasenameNoExtension}.obj \"${file}\" -o \"build\\${fileBasenameNoExtension}.exe\" && \"build\\${fileBasenameNoExtension}.exe\""
                 ],
                 "options": {
                     "cwd": "${workspaceFolder}",
@@ -80,7 +83,7 @@
                         "args": ["/c"]
                     },
                     "env": {
-                        "IFX_FLAGS": ""
+                        "IFX_FLAGS": "-O3 -xHost -qopenmp"
                     }
                 }
             },
@@ -93,16 +96,16 @@
                 "options": {
                     "cwd": "${workspaceFolder}",
                     "env": {
-                        "GFORTRAN_FLAGS": "-march=native"
+                        "GFORTRAN_FLAGS": "-O3 -march=native"
                     }
                 }
             },
             "group": {
                 "kind": "build",
-                "isDefault": true
+                "isDefault": false
             },
             "problemMatcher": [],
-            "detail": "Компиляция и запуск текущей Fortran программы"
+            "detail": "Сборка и запуск текущего Fortran файла"
         }
     ]
 }
