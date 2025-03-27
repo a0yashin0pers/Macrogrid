@@ -131,62 +131,99 @@ contains
          macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
          subgrid_sizes(subgrid_size_idx), error)
 
-      write(io,'(A,I5,A,I5,A,F14.8,A,F14.8,A,I6)') &
-         "Macrogrid_size_x&Macrogrid_size_y&Subgrid_size&Error&Run_time&Iterations#", &
-         macrogrid_sizes(macrogrid_size_idx), "&", subgrid_sizes(subgrid_size_idx), "&", error, "&", time, "&", iter
+      write(io,*) "Macrogrid_size&Subgrid_size&Error&Run_time&Iterations#", &
+         macrogrid_sizes(macrogrid_size_idx), "&", subgrid_sizes(subgrid_size_idx), &
+         "&", error, "&", time, "&", iter
 
       deallocate(macrogrid)
 
    end subroutine run_test
 
-   subroutine golden_section(macrogrid_size_idx, subgrid_size_idx)
+   subroutine golden_section(macrogrid_size_idx, subgrid_size_idx, macrogrid_omega)
       implicit none
       integer, intent(in) :: macrogrid_size_idx, subgrid_size_idx
+      real*8, intent(out) :: macrogrid_omega
       
-      integer :: tile_size = 4, subtile_level = 4
-      real*8 :: eps_subgrid = 1.0d-8, eps_interface = 1.0d-8
+      integer :: tile_size = 8, subtile_level = 8
+      real*8 :: eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, eps_golden = 1.0d-5
       integer :: max_iter_interface = 100000, max_iter_subgrid = 1
 
       real*8, allocatable :: macrogrid(:, :, :, :)
 
-      real*8 :: error, time
-      integer :: iter
+      real*8 :: error, time, time1, time2
+      integer :: iter,iter1,iter2
 
-      real*8 :: macrogrid_omega
-      
+      real*8 :: k, a, b, wa, wb
+
+      k = 0.6180339887d0
+      a = 1.0d0
+      b = 2.0d0
+      wa = 1.0d0
+      wb = 2.0d0
+
       allocate(macrogrid(macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
          subgrid_sizes(subgrid_size_idx), subgrid_sizes(subgrid_size_idx)))
 
-      ! здесь реализуешь метод золотого сечения, записываешь омегу в macrogrid_omega
       macrogrid_omega = 1.5d0
 
-      ! инициалзация граничных условий
+      do 
+         if (abs(wa-wb) < eps_golden) then 
+         macrogrid_omega = (wb+wa)/2
+         exit
+         end if
+
+         wa = a + (1-k)*(b-a)
+         wb = a + k*(b-a)
+
+         call initialize_boundary(macrogrid, &
+            macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), subgrid_sizes(subgrid_size_idx))
+         call configure_subgrid_solver(eps_subgrid, max_iter_subgrid, &
+            subgrid_omegas(subgrid_size_idx), tile_size, subtile_level)
+         call configure_macrogrid_solver(eps_interface, max_iter_interface, &
+            wa)
+         call run(macrogrid, macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
+            subgrid_sizes(subgrid_size_idx), sor_fixed_omega, tiling_sor)
+         call get_results(time, iter)
+         iter1 = iter
+         time1 = time
+         time = 0.0d0
+         iter = 0
+
+         call initialize_boundary(macrogrid, &
+            macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), subgrid_sizes(subgrid_size_idx))
+         call configure_subgrid_solver(eps_subgrid, max_iter_subgrid, &
+            subgrid_omegas(subgrid_size_idx), tile_size, subtile_level)
+         call configure_macrogrid_solver(eps_interface, max_iter_interface, &
+            wb)
+         call run(macrogrid, macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
+            subgrid_sizes(subgrid_size_idx), sor_fixed_omega, tiling_sor)
+         call get_results(time, iter)
+         iter2 = iter
+         time2 = time
+         time = 0.0d0
+         iter = 0
+
+         if (iter1 > iter2) then 
+         a = wa
+         else 
+         b = wb
+         end if
+
+      end do
+
       call initialize_boundary(macrogrid, &
-         macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), subgrid_sizes(subgrid_size_idx))
-
-      ! задаются конфиги для решателя на подсетках
+            macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), subgrid_sizes(subgrid_size_idx))
       call configure_subgrid_solver(eps_subgrid, max_iter_subgrid, &
-         subgrid_omegas(subgrid_size_idx), tile_size, subtile_level)
-
-      ! задаются конфиги для решателя на макросетке
+            subgrid_omegas(subgrid_size_idx), tile_size, subtile_level)
       call configure_macrogrid_solver(eps_interface, max_iter_interface, &
-         macrogrid_omega)
-
-      ! запуск решателя
+            macrogrid_omega)
       call run(macrogrid, macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
-         subgrid_sizes(subgrid_size_idx), sor_fixed_omega, tiling_sor)
-
-      ! получение результатов
+            subgrid_sizes(subgrid_size_idx), sor_fixed_omega, tiling_sor)
       call get_results(time, iter)
 
-      ! вычисление ошибки
       call compute_boundary_error(macrogrid, &
          macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
          subgrid_sizes(subgrid_size_idx), error)
-
-      ! вывод результатов
-      write (*,*) "Macrogrid_size: ", macrogrid_sizes(macrogrid_size_idx), &
-         "Subgrid_size: ", subgrid_sizes(subgrid_size_idx), "Error: ", error, "Omega: ", macrogrid_omega
 
       deallocate(macrogrid)
 
