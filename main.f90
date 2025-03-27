@@ -29,7 +29,7 @@ program main
 
    write(*, *) "Running tests"
 
-   open(io, file='results.txt', status='unknown', action='write')
+   open(io, file='results.txt', status='unknown', action='write', recl=10000)
 
    write(io, *) "simple_iteration with tiling_sor"
    do mac_cfg = 1, size(macrogrid_configs)
