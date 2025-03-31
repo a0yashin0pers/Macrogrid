@@ -1,0 +1,70 @@
+ original_sor
+ Subgrid_size&Error&Run_time&Iterations#          10 &  4.965461535137631E-005 &  2.000000000002000E-010 &          27
+ Subgrid_size&Error&Run_time&Iterations#          18 &  1.577541998117519E-005 &  1.799999999999025E-009 &          53
+ Subgrid_size&Error&Run_time&Iterations#          34 &  4.345110490719561E-006 &  1.650000000000262E-007 &         106
+ Subgrid_size&Error&Run_time&Iterations#          66 &  1.151750515907227E-006 &  1.718000000000330E-006 &         217
+ Subgrid_size&Error&Run_time&Iterations#         130 &  3.397168285057359E-007 &  1.617399999999991E-004 &         456
+ Subgrid_size&Error&Run_time&Iterations#         258 &  8.395722439919132E-008 &  1.419980000000009E-003 &         955
+ Subgrid_size&Error&Run_time&Iterations#         514 &  3.281055669032832E-008 &  0.122287900000000      &        1972
+ Subgrid_size&Error&Run_time&Iterations#        1026 &  3.803248317712653E-009 &   10.3012460000000      &        4110
+  
+ tiling_sor_8
+ Subgrid_size&Error&Run_time&Iterations#          10 &  4.965461535137631E-005 &  2.000000002055913E-010 &          27
+ Subgrid_size&Error&Run_time&Iterations#          18 &  1.577541998117519E-005 &  1.400000000018054E-009 &          53
+ Subgrid_size&Error&Run_time&Iterations#          34 &  4.345110490719561E-006 &  1.079999999973325E-007 &         106
+ Subgrid_size&Error&Run_time&Iterations#          66 &  1.151750515907227E-006 &  8.130000000008409E-007 &         217
+ Subgrid_size&Error&Run_time&Iterations#         130 &  3.397168285057359E-007 &  7.367999999999597E-005 &         456
+ Subgrid_size&Error&Run_time&Iterations#         258 &  8.395722439919132E-008 &  6.117199999999912E-004 &         955
+ Subgrid_size&Error&Run_time&Iterations#         514 &  3.281055669032832E-008 &  4.952019999999990E-002 &        1972
+ Subgrid_size&Error&Run_time&Iterations#        1026 &  3.803248317712653E-009 &   4.24907900000000      &        4110
+  
+ subtiling_sor_1
+ Subgrid_size&Error&Run_time&Iterations#          10 &  4.945464112819568E-005 &  2.000000002055913E-010 &          28
+ Subgrid_size&Error&Run_time&Iterations#          18 &  1.571895141313144E-005 &  1.599999999513102E-009 &          54
+ Subgrid_size&Error&Run_time&Iterations#          34 &  4.345110490719561E-006 &  1.480000000029236E-007 &         106
+ Subgrid_size&Error&Run_time&Iterations#          66 &  1.155698632407624E-006 &  1.296000000003517E-006 &         218
+ Subgrid_size&Error&Run_time&Iterations#         130 &  3.397168285057359E-007 &  1.155200000000178E-004 &         456
+ Subgrid_size&Error&Run_time&Iterations#         258 &  8.299020201696432E-008 &  1.049590000000080E-003 &         956
+ Subgrid_size&Error&Run_time&Iterations#         514 &  3.281055669032832E-008 &  8.495390000000072E-002 &        1972
+ Subgrid_size&Error&Run_time&Iterations#        1026 &  3.803248317712653E-009 &   7.21531800000000      &        4110
+  
+ subtiling_sor_2
+ Subgrid_size&Error&Run_time&Iterations#          10 &  4.965461535137631E-005 &  1.999999994950485E-010 &          27
+ Subgrid_size&Error&Run_time&Iterations#          18 &  1.571895141313144E-005 &  1.399999999307511E-009 &          54
+ Subgrid_size&Error&Run_time&Iterations#          34 &  4.370775504167368E-006 &  1.110000000039690E-007 &         108
+ Subgrid_size&Error&Run_time&Iterations#          66 &  1.162853574586923E-006 &  9.299999999967668E-007 &         219
+ Subgrid_size&Error&Run_time&Iterations#         130 &  3.397168285057359E-007 &  7.952000000003068E-005 &         456
+ Subgrid_size&Error&Run_time&Iterations#         258 &  8.198401313942161E-008 &  6.707100000001276E-004 &         957
+ Subgrid_size&Error&Run_time&Iterations#         514 &  3.279298904493889E-008 &  6.313260000000014E-002 &        1974
+ Subgrid_size&Error&Run_time&Iterations#        1026 &  3.803248317712653E-009 &   5.74715000000000      &        4110
+  
+ subtiling_sor_4
+ Subgrid_size&Error&Run_time&Iterations#          10 &  4.971769756749370E-005 &  2.000000009161340E-010 &          30
+ Subgrid_size&Error&Run_time&Iterations#          18 &  1.572103029686327E-005 &  8.999999991488040E-010 &          55
+ Subgrid_size&Error&Run_time&Iterations#          34 &  4.390386544958657E-006 &  6.299999999725970E-008 &         110
+ Subgrid_size&Error&Run_time&Iterations#          66 &  1.171585187797167E-006 &  5.249999999961120E-007 &         220
+ Subgrid_size&Error&Run_time&Iterations#         130 &  3.377790813379076E-007 &  4.163000000005468E-005 &         460
+ Subgrid_size&Error&Run_time&Iterations#         258 &  8.395722439919132E-008 &  3.608299999999076E-004 &         955
+ Subgrid_size&Error&Run_time&Iterations#         514 &  3.278554622494121E-008 &  3.170049999999947E-002 &        1975
+ Subgrid_size&Error&Run_time&Iterations#        1026 &  3.803248317712653E-009 &   2.62862500000000      &        4110
+  
+ subtiling_sor_8
+ Subgrid_size&Error&Run_time&Iterations#          10 &   1.10514078808507      &  9.299999999257125E-009 &         261
+ Subgrid_size&Error&Run_time&Iterations#          18 &  1.571895141313144E-005 &  1.100000000064938E-009 &          54
+ Subgrid_size&Error&Run_time&Iterations#          34 &  4.370775504167368E-006 &  7.899999999949614E-008 &         108
+ Subgrid_size&Error&Run_time&Iterations#          66 &  1.211146185023346E-006 &  6.779999999935171E-007 &         225
+ Subgrid_size&Error&Run_time&Iterations#         130 &  3.384911191721427E-007 &  5.651000000000295E-005 &         459
+ Subgrid_size&Error&Run_time&Iterations#         258 &  7.911976070619851E-008 &  4.895299999999736E-004 &         963
+ Subgrid_size&Error&Run_time&Iterations#         514 &  3.266288883731628E-008 &  4.141830000000084E-002 &        1980
+ Subgrid_size&Error&Run_time&Iterations#        1026 &  3.783933107682429E-009 &   3.46150600000001      &        4113
+  
+ subtiling_sor_16
+ Subgrid_size&Error&Run_time&Iterations#          10 &  0.697049568425940      &  1.005999999989626E-007 &         629
+ Subgrid_size&Error&Run_time&Iterations#          18 &   1.11022277881105      &  9.400000000141517E-008 &         629
+ Subgrid_size&Error&Run_time&Iterations#          34 &  4.494137582941759E-006 &  1.149999999938700E-007 &         119
+ Subgrid_size&Error&Run_time&Iterations#          66 &  1.180471006322595E-006 &  1.141000000018266E-006 &         221
+ Subgrid_size&Error&Run_time&Iterations#         130 &  3.384911191721427E-007 &  1.102999999997678E-004 &         459
+ Subgrid_size&Error&Run_time&Iterations#         258 &  7.901320795054669E-008 &  9.647600000002399E-004 &         969
+ Subgrid_size&Error&Run_time&Iterations#         514 &  3.281055669032832E-008 &  7.870690000000025E-002 &        1972
+ Subgrid_size&Error&Run_time&Iterations#        1026 &  3.779259045724577E-009 &   6.59414999999998      &        4114
+  

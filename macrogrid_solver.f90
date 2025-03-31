@@ -7,16 +7,15 @@ module macrogrid_solver
          implicit none
       end subroutine interface_macrogrid_solver_method
 
-      subroutine interface_subgrid_solver_method(subgrid0, subgrid_size0, dx0, dy0)
+      subroutine interface_subgrid_solver_method(subgrid0, subgrid_size0)
          implicit none
          integer, intent(in) :: subgrid_size0
          real*8, intent(inout) :: subgrid0(subgrid_size0*subgrid_size0)
-         real*8, intent(in) :: dx0, dy0
       end subroutine interface_subgrid_solver_method
    end interface
 
    public :: interface_macrogrid_solver_method, interface_subgrid_solver_method
-   public :: run, configure_macrogrid_solver, get_results, get_omega
+   public :: run_macrogrid_solver, configure_macrogrid_solver, get_macrogrid_solver_results, get_macrogrid_omega
 
    public :: simple_iteration
    public :: sor, sor_fixed_omega
@@ -46,7 +45,7 @@ contains
 
    end subroutine configure_macrogrid_solver
 
-   subroutine run(new_macrogrid, new_macrogrid_size_x, new_macrogrid_size_y, new_subgrid_size, &
+   subroutine run_macrogrid_solver(new_macrogrid, new_macrogrid_size_x, new_macrogrid_size_y, new_subgrid_size, &
       new_macrogrid_solver_method, new_subgrid_solver_method)
 
       implicit none
@@ -54,6 +53,8 @@ contains
       real*8, intent(inout), target :: new_macrogrid(:,:,:,:)
       procedure(interface_macrogrid_solver_method) :: new_macrogrid_solver_method
       procedure(interface_subgrid_solver_method) :: new_subgrid_solver_method
+
+      real*8 :: start_time, end_time
 
       macrogrid_size_x = new_macrogrid_size_x
       macrogrid_size_y = new_macrogrid_size_y
@@ -66,23 +67,28 @@ contains
 
       macrogrid => new_macrogrid
       subgrid_solver_method => new_subgrid_solver_method
+
+      call cpu_time(start_time)
       call new_macrogrid_solver_method()
+      call cpu_time(end_time)
 
-   end subroutine run
+      time = end_time - start_time
 
-   subroutine get_results(res_time, res_iter)
+   end subroutine run_macrogrid_solver
+
+   subroutine get_macrogrid_solver_results(res_time, res_iter)
       implicit none
       real*8, intent(out) :: res_time
       integer, intent(out) :: res_iter
       res_time = time
       res_iter = iter
-   end subroutine get_results
+   end subroutine get_macrogrid_solver_results
 
-   subroutine get_omega(res_omega)
+   subroutine get_macrogrid_omega(res_omega)
       implicit none
       real*8, intent(out) :: res_omega
       res_omega = omega
-   end subroutine get_omega
+   end subroutine get_macrogrid_omega
 
    subroutine compute_subgrids()
       implicit none
@@ -90,7 +96,7 @@ contains
 
       do iX = 1, macrogrid_size_x
          do iY = 1, macrogrid_size_y
-            call subgrid_solver_method(macrogrid(iX,iY,:,:), subgrid_size, dx, dy)
+            call subgrid_solver_method(macrogrid(iX,iY,:,:), subgrid_size)
          end do
       end do
 
@@ -114,11 +120,9 @@ contains
    subroutine simple_iteration()
       implicit none
       real*8 :: old_vec(interface_size), new_vec(interface_size)
-      real*8 :: interface_error, start_time, end_time
+      real*8 :: interface_error
       integer :: iX, iY, k
       real*8 :: new_val, old_value
-
-      call cpu_time(start_time)
 
       do iter = 1, max_iter
 
@@ -169,19 +173,14 @@ contains
 
       call compute_intersection_nodes()
 
-      call cpu_time(end_time)
-      time = end_time - start_time
-
    end subroutine simple_iteration
 
    subroutine sor()
       implicit none
       real*8 :: old_vec(interface_size), new_vec(interface_size)
-      real*8 :: interface_error, start_time, end_time
+      real*8 :: interface_error
       integer :: iX, iY, k
       real*8 :: new_val, old_value, norm1, norm2, pz
-
-      call cpu_time(start_time)
 
       omega = 1.0d0
       
@@ -250,19 +249,14 @@ contains
 
       call compute_intersection_nodes()
 
-      call cpu_time(end_time)
-      time = end_time - start_time
-
    end subroutine sor
 
    subroutine sor_fixed_omega()
       implicit none
       real*8 :: old_vec(interface_size), new_vec(interface_size)
-      real*8 :: interface_error, start_time, end_time
+      real*8 :: interface_error
       integer :: iX, iY, k
       real*8 :: new_val, old_value
-
-      call cpu_time(start_time)
 
       do iter = 1, max_iter
 
@@ -317,19 +311,14 @@ contains
 
       call compute_intersection_nodes()
 
-      call cpu_time(end_time)
-      time = end_time - start_time
-
    end subroutine sor_fixed_omega
 
    subroutine conjugate_residuals()
       implicit none
       real(8), dimension(interface_size) :: b, u_new, u_old, r_old, r_new, p_old, p_new
       real(8), dimension(interface_size) :: Ar_old, Ar_new, Ap_old, Ap_new
-      real(8) :: alpha, beta, temp0, temp1, old_value, new_val, start_time, end_time, interface_error
+      real(8) :: alpha, beta, temp0, temp1, old_value, new_val, interface_error
       integer :: i
-
-      call cpu_time(start_time)
 
       call compute_subgrids()
       call s(b)
@@ -388,9 +377,6 @@ contains
          u_old = u_new
 
       end do
-
-      call cpu_time(end_time)
-      time = end_time - start_time
 
       call set_interface(u_new)
       call compute_subgrids()

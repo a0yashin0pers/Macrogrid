@@ -13,7 +13,7 @@
                 "options": {
                     "env": {
                         "IFX_FLAGS": "-O3 -xHost -qopenmp",
-                        "FORTRAN_SOURCES": "macrogrid_initializer.f90 subgrid_solver.f90 macrogrid_solver.f90 main.f90"
+                        "FORTRAN_SOURCES": "subgrid_boundary_initializer.f90 macrogrid_boundary_initializer.f90 subgrid_solver.f90 macrogrid_solver.f90 main.f90"
                     }
                 }
             },
@@ -30,7 +30,7 @@
                     },
                     "env": {
                         "IFX_FLAGS": "-O3 -xHost -qopenmp",
-                        "FORTRAN_SOURCES": "macrogrid_initializer.f90 subgrid_solver.f90 macrogrid_solver.f90 main.f90"
+                        "FORTRAN_SOURCES": "subgrid_boundary_initializer.f90 macrogrid_boundary_initializer.f90 subgrid_solver.f90 macrogrid_solver.f90 main.f90"
                     }
                 }
             },
@@ -43,7 +43,7 @@
                 "options": {
                     "env": {
                         "GFORTRAN_FLAGS": "-O3 -march=native",
-                        "FORTRAN_SOURCES": "macrogrid_initializer.f90 subgrid_solver.f90 macrogrid_solver.f90 main.f90"
+                        "FORTRAN_SOURCES": "subgrid_boundary_initializer.f90 macrogrid_boundary_initializer.f90 subgrid_solver.f90 macrogrid_solver.f90 main.f90"
                     }
                 }
             },
