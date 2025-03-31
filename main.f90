@@ -17,7 +17,7 @@ program main
    integer, dimension(8), parameter :: macrogrid_sizes = &
       [1, 2, 3, 4, 5, 6, 7, 8]
 
-   call subgrid_test()
+   call macrogrid_test()
 
 contains
 
@@ -150,29 +150,17 @@ contains
 
       open(io, file='results.txt', status='unknown', action='write', recl=10000)
 
-      write(io, *) "simple_iteration with tiling_sor"
+      write(io, *) "sor_fixed_omega with tiling_sor"
       do mac_cfg = 1, size(macrogrid_configs)
          do sub_cfg = 1, size(subgrid_configs)
 
-            call run_macrogrid_test(macrogrid_solver_method = simple_iteration, subgrid_solver_method = tiling_sor, &
+            call golden_section(tiling_sor, macrogrid_configs(mac_cfg), subgrid_configs(sub_cfg), omega)
+
+            call run_macrogrid_test(macrogrid_solver_method = sor_fixed_omega, subgrid_solver_method = tiling_sor, &
                eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
                max_iter_interface = 100000, max_iter_subgrid = 1, &
                macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               macrogrid_omega = omega, tile_size = 8, subtile_level = 8)
-
-         end do
-      end do
-      write(io, *) " "
-
-      write(io, *) "sor with tiling_sor"
-      do mac_cfg = 1, size(macrogrid_configs)
-         do sub_cfg = 1, size(subgrid_configs)
-
-            call run_macrogrid_test(macrogrid_solver_method = sor, subgrid_solver_method = tiling_sor, &
-               eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
-               max_iter_interface = 100000, max_iter_subgrid = 1, &
-               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               macrogrid_omega = omega, tile_size = 8, subtile_level = 8)
+               macrogrid_omega = omega, tile_size = 4, subtile_level = 4)
 
          end do
       end do
@@ -182,13 +170,13 @@ contains
       do mac_cfg = 1, size(macrogrid_configs)
          do sub_cfg = 1, size(subgrid_configs)
 
-            call golden_section(macrogrid_configs(mac_cfg), subgrid_configs(sub_cfg), omega)
+            call golden_section(subtiling_sor_4, macrogrid_configs(mac_cfg), subgrid_configs(sub_cfg), omega)
 
-            call run_macrogrid_test(macrogrid_solver_method = sor_fixed_omega, subgrid_solver_method = tiling_sor, &
+            call run_macrogrid_test(macrogrid_solver_method = sor_fixed_omega, subgrid_solver_method = subtiling_sor_4, &
                eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
                max_iter_interface = 100000, max_iter_subgrid = 1, &
                macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               macrogrid_omega = omega, tile_size = 8, subtile_level = 8)
+               macrogrid_omega = omega, tile_size = 4, subtile_level = 4)
 
          end do
       end do
@@ -235,7 +223,7 @@ contains
 
       end do
 
-      time = time / real(repeat_count)
+      time = sum_time / real(repeat_count)
 
       write(io,*) "Subgrid_size&Error&Run_time&Iterations#", &
          subgrid_sizes(subgrid_size_idx), "&", error, "&", time, "&", iter
@@ -284,20 +272,21 @@ contains
 
       call get_macrogrid_omega(macrogrid_omega)
 
-      write(io,*) "Macrogrid_size&Subgrid_size&Error&Run_time&Iterations#", &
+      write(io,*) "Macrogrid_size&Subgrid_size&Error&Run_time&Iterations&Omega#", &
          macrogrid_sizes(macrogrid_size_idx), "&", subgrid_sizes(subgrid_size_idx), &
-         "&", error, "&", time, "&", iter
+         "&", error, "&", time, "&", iter, "&", macrogrid_omega
 
       deallocate(macrogrid)
 
    end subroutine run_macrogrid_test
 
-   subroutine golden_section(macrogrid_size_idx, subgrid_size_idx, macrogrid_omega)
+   subroutine golden_section(subgrid_solver_method, macrogrid_size_idx, subgrid_size_idx, macrogrid_omega)
       implicit none
+      procedure(interface_subgrid_solver_method) :: subgrid_solver_method
       integer, intent(in) :: macrogrid_size_idx, subgrid_size_idx
       real*8, intent(out) :: macrogrid_omega
 
-      integer :: tile_size = 8, subtile_level = 8
+      integer :: tile_size = 4, subtile_level = 4
       real*8 :: eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, eps_golden = 1.0d-5
       integer :: max_iter_interface = 100000, max_iter_subgrid = 1
 
@@ -335,7 +324,7 @@ contains
          call configure_macrogrid_solver(eps_interface, max_iter_interface, &
             wa)
          call run_macrogrid_solver(macrogrid, macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
-            subgrid_sizes(subgrid_size_idx), sor_fixed_omega, tiling_sor)
+            subgrid_sizes(subgrid_size_idx), sor_fixed_omega, subgrid_solver_method)
          call get_macrogrid_solver_results(time, iter)
          iter1 = iter
          time1 = time
@@ -349,7 +338,7 @@ contains
          call configure_macrogrid_solver(eps_interface, max_iter_interface, &
             wb)
          call run_macrogrid_solver(macrogrid, macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
-            subgrid_sizes(subgrid_size_idx), sor_fixed_omega, tiling_sor)
+            subgrid_sizes(subgrid_size_idx), sor_fixed_omega, subgrid_solver_method)
          call get_macrogrid_solver_results(time, iter)
          iter2 = iter
          time2 = time
@@ -371,7 +360,7 @@ contains
       call configure_macrogrid_solver(eps_interface, max_iter_interface, &
          macrogrid_omega)
       call run_macrogrid_solver(macrogrid, macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
-         subgrid_sizes(subgrid_size_idx), sor_fixed_omega, tiling_sor)
+         subgrid_sizes(subgrid_size_idx), sor_fixed_omega, subgrid_solver_method)
       call get_macrogrid_solver_results(time, iter)
 
       call compute_macrogrid_boundary_error(macrogrid, &
