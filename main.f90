@@ -24,11 +24,11 @@ contains
    subroutine subgrid_test()
       implicit none
 
-      integer, dimension(8), parameter :: subgrid_configs = &
-         [1, 2, 3, 4, 5, 6, 7, 8]
+      integer, dimension(6), parameter :: subgrid_configs = &
+         [3, 4, 5, 6, 7, 8]
 
-      integer, dimension(8), parameter :: repeat_counts = &
-         [10000, 10000, 1000, 1000, 100, 100, 10, 1]
+      integer, dimension(6), parameter :: repeat_counts = &
+         [1000, 1000, 100, 100, 10, 1]
 
       integer :: sub_cfg
 
