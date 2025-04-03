@@ -1,20 +1,20 @@
 module macrogrid_solver
+   use subgrid_solver
+   use omp_lib
    implicit none
    private
 
    interface
-      subroutine interface_macrogrid_solver_method()
+      subroutine i_macrogrid_solver_method()
          implicit none
-      end subroutine interface_macrogrid_solver_method
+      end subroutine i_macrogrid_solver_method
 
-      subroutine interface_subgrid_solver_method(subgrid0, subgrid_size0)
+      subroutine i_subgrids_computer()
          implicit none
-         integer, intent(in) :: subgrid_size0
-         real*8, intent(inout) :: subgrid0(subgrid_size0*subgrid_size0)
-      end subroutine interface_subgrid_solver_method
+      end subroutine i_subgrids_computer
    end interface
 
-   public :: interface_macrogrid_solver_method, interface_subgrid_solver_method
+   public :: i_macrogrid_solver_method, i_subgrid_solver_method
    public :: run_macrogrid_solver, configure_macrogrid_solver, get_macrogrid_solver_results, get_macrogrid_omega
 
    public :: simple_iteration
@@ -27,7 +27,8 @@ module macrogrid_solver
 
    real*8 :: dx, dy
    integer :: interface_size
-   procedure(interface_subgrid_solver_method), pointer :: subgrid_solver_method => null()
+   procedure(i_subgrid_solver_method), pointer :: subgrid_solver_method => null()
+   procedure(i_subgrids_computer), pointer :: subgrids_computer => null()
 
    real*8 :: time
    integer :: iter
@@ -45,14 +46,16 @@ contains
 
    end subroutine configure_macrogrid_solver
 
-   subroutine run_macrogrid_solver(new_macrogrid, new_macrogrid_size_x, new_macrogrid_size_y, new_subgrid_size, &
+   subroutine run_macrogrid_solver(use_openmp, new_macrogrid, &
+      new_macrogrid_size_x, new_macrogrid_size_y, new_subgrid_size, &
       new_macrogrid_solver_method, new_subgrid_solver_method)
 
       implicit none
+      logical, intent(in) :: use_openmp
       integer, intent(in) :: new_macrogrid_size_x, new_macrogrid_size_y, new_subgrid_size
       real*8, intent(inout), target :: new_macrogrid(:,:,:,:)
-      procedure(interface_macrogrid_solver_method) :: new_macrogrid_solver_method
-      procedure(interface_subgrid_solver_method) :: new_subgrid_solver_method
+      procedure(i_macrogrid_solver_method) :: new_macrogrid_solver_method
+      procedure(i_subgrid_solver_method) :: new_subgrid_solver_method
 
       real*8 :: start_time, end_time
 
@@ -61,16 +64,23 @@ contains
       subgrid_size = new_subgrid_size
 
       interface_size = (macrogrid_size_x*(macrogrid_size_y-1) + macrogrid_size_y*(macrogrid_size_x-1))*(subgrid_size-2)
-
       dx = 1.0d0/dble(macrogrid_size_x*subgrid_size-(macrogrid_size_x-1)-1)
       dy = 1.0d0/dble(macrogrid_size_y*subgrid_size-(macrogrid_size_y-1)-1)
 
       macrogrid => new_macrogrid
       subgrid_solver_method => new_subgrid_solver_method
 
-      call cpu_time(start_time)
-      call new_macrogrid_solver_method()
-      call cpu_time(end_time)
+      if (use_openmp) then
+         subgrids_computer => compute_subgrids_openmp
+         start_time = omp_get_wtime()
+         call new_macrogrid_solver_method()
+         end_time = omp_get_wtime()
+      else
+         subgrids_computer => compute_subgrids
+         call cpu_time(start_time)
+         call new_macrogrid_solver_method()
+         call cpu_time(end_time)
+      end if
 
       time = end_time - start_time
 
@@ -102,20 +112,20 @@ contains
 
    end subroutine compute_subgrids
 
-   ! subroutine compute_subgrids_parallel()
-   !    implicit none
-   !    integer :: iX, iY
+   subroutine compute_subgrids_openmp()
+      implicit none
+      integer :: iX, iY
 
-   !    !$OMP PARALLEL DO PRIVATE(iX, iY) COLLAPSE(2) SCHEDULE(static) &
-   !    !$OMP DEFAULT(NONE) SHARED(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size, dx, dy)
-   !    do iX = 1, macrogrid_size_x
-   !       do iY = 1, macrogrid_size_y
-   !          call subgrid_solver_method(macrogrid(iX,iY,:,:), subgrid_size, dx, dy)
-   !       end do
-   !    end do
-   !    !$OMP END PARALLEL DO
+      !$OMP PARALLEL DO PRIVATE(iX, iY) COLLAPSE(2) SCHEDULE(static) &
+      !$OMP DEFAULT(NONE) SHARED(macrogrid, macrogrid_size_x, macrogrid_size_y, subgrid_size)
+      do iX = 1, macrogrid_size_x
+         do iY = 1, macrogrid_size_y
+            call subgrid_solver_method(macrogrid(iX,iY,:,:), subgrid_size)
+         end do
+      end do
+      !$OMP END PARALLEL DO
 
-   ! end subroutine compute_subgrids_parallel
+   end subroutine compute_subgrids_openmp
 
    subroutine simple_iteration()
       implicit none
@@ -127,7 +137,7 @@ contains
       do iter = 1, max_iter
 
          interface_error = 0.0d0
-         call compute_subgrids()
+         call subgrids_computer()
 
          do iX = 1, macrogrid_size_x
             do iY = 1, macrogrid_size_y - 1
@@ -183,12 +193,12 @@ contains
       real*8 :: new_val, old_value, norm1, norm2, pz
 
       omega = 1.0d0
-      
+
       do iter = 1, max_iter
 
          interface_error = 0.0d0
          norm2 = 0.0d0
-         call compute_subgrids()
+         call subgrids_computer()
 
          do iX = 1, macrogrid_size_x
             do iY = 1, macrogrid_size_y - 1
@@ -261,7 +271,7 @@ contains
       do iter = 1, max_iter
 
          interface_error = 0.0d0
-         call compute_subgrids()
+         call subgrids_computer()
 
          do iX = 1, macrogrid_size_x
             do iY = 1, macrogrid_size_y - 1
@@ -320,7 +330,7 @@ contains
       real(8) :: alpha, beta, temp0, temp1, old_value, new_val, interface_error
       integer :: i
 
-      call compute_subgrids()
+      call subgrids_computer()
       call s(b)
 
       u_old = 0.0d0
@@ -379,7 +389,7 @@ contains
       end do
 
       call set_interface(u_new)
-      call compute_subgrids()
+      call subgrids_computer()
       call compute_intersection_nodes()
 
    end subroutine conjugate_residuals
@@ -484,7 +494,7 @@ contains
       real*8 :: subgrid_error
 
       call set_interface(v)
-      call compute_subgrids()
+      call subgrids_computer()
       call s(Cv_vec)
 
       Cv_vec = Cv_vec - b

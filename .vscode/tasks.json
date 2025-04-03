@@ -42,7 +42,7 @@
                 ],
                 "options": {
                     "env": {
-                        "GFORTRAN_FLAGS": "-O3 -march=native",
+                        "GFORTRAN_FLAGS": "-O3 -march=native -fopenmp",
                         "FORTRAN_SOURCES": "subgrid_boundary_initializer.f90 macrogrid_boundary_initializer.f90 subgrid_solver.f90 macrogrid_solver.f90 main.f90"
                     }
                 }
