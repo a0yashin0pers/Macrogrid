@@ -30,8 +30,6 @@ program main
       1.999d0, 1.999d0]
    real*8, dimension(8,8) :: macrogrid_omegas
 
-   integer, parameter :: optimal_tile_size = 4
-
    macrogrid_omegas(1,:) = macrogrid_omegas_1(:)
    macrogrid_omegas(2,:) = macrogrid_omegas_2(:)
    macrogrid_omegas(3,:) = macrogrid_omegas_1(:)
@@ -41,15 +39,16 @@ program main
    macrogrid_omegas(7,:) = macrogrid_omegas_1(:)
    macrogrid_omegas(8,:) = macrogrid_omegas_1(:)
 
-   call macrogrid_test()
+   call subgrid_test()
+   ! call subgrid_geom_progress_test()
 
 contains
 
    subroutine subgrid_test()
       implicit none
 
-      integer, dimension(6), parameter :: subgrid_configs = &
-         [3, 4, 5, 6, 7, 8]
+      integer, dimension(8), parameter :: subgrid_configs = &
+         [1, 2, 3, 4, 5, 6, 7, 8]
 
       integer :: sub_cfg
 
@@ -59,133 +58,78 @@ contains
 
       write(io, *) "original_sor"
       do sub_cfg = 1, size(subgrid_configs)
-
          call run_subgrid_test(subgrid_solver_method = original_sor, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
       write(io, *) "tiling_sor_1"
       do sub_cfg = 1, size(subgrid_configs)
-
-         call run_subgrid_test(subgrid_solver_method = tiling_sor, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = 1, subtile_level = optimal_tile_size)
-
+         call run_subgrid_test(subgrid_solver_method = tiling_sor_1, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
       write(io, *) "tiling_sor_2"
       do sub_cfg = 1, size(subgrid_configs)
-
-         call run_subgrid_test(subgrid_solver_method = tiling_sor, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = 2, subtile_level = optimal_tile_size)
-
+         call run_subgrid_test(subgrid_solver_method = tiling_sor_2, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
       write(io, *) "tiling_sor_4"
       do sub_cfg = 1, size(subgrid_configs)
-
-         call run_subgrid_test(subgrid_solver_method = tiling_sor, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = 4, subtile_level = optimal_tile_size)
-
+         call run_subgrid_test(subgrid_solver_method = tiling_sor_4, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
       write(io, *) "tiling_sor_8"
       do sub_cfg = 1, size(subgrid_configs)
-
-         call run_subgrid_test(subgrid_solver_method = tiling_sor, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = 8, subtile_level = optimal_tile_size)
-
+         call run_subgrid_test(subgrid_solver_method = tiling_sor_8, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
       write(io, *) "tiling_sor_16"
       do sub_cfg = 1, size(subgrid_configs)
-
-         call run_subgrid_test(subgrid_solver_method = tiling_sor, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = 16, subtile_level = optimal_tile_size)
-
+         call run_subgrid_test(subgrid_solver_method = tiling_sor_16, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
       write(io, *) "subtiling_sor_1"
       do sub_cfg = 1, size(subgrid_configs)
-
          call run_subgrid_test(subgrid_solver_method = subtiling_sor_1, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
       write(io, *) "subtiling_sor_2"
       do sub_cfg = 1, size(subgrid_configs)
-
          call run_subgrid_test(subgrid_solver_method = subtiling_sor_2, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
       write(io, *) "subtiling_sor_4"
       do sub_cfg = 1, size(subgrid_configs)
-
          call run_subgrid_test(subgrid_solver_method = subtiling_sor_4, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
       write(io, *) "subtiling_sor_8"
       do sub_cfg = 1, size(subgrid_configs)
-
          call run_subgrid_test(subgrid_solver_method = subtiling_sor_8, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
       write(io, *) "subtiling_sor_16"
       do sub_cfg = 1, size(subgrid_configs)
-
          call run_subgrid_test(subgrid_solver_method = subtiling_sor_16, &
-            eps_subgrid = 1.0d-5, &
-            max_iter_subgrid = 100000, &
-            subgrid_size_idx = subgrid_configs(sub_cfg), &
-            tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+            subgrid_size_idx = subgrid_configs(sub_cfg))
       end do
       write(io, *) " "
 
@@ -194,14 +138,108 @@ contains
       write(*, *) "End of subgrid tests"
    end subroutine subgrid_test
 
+   subroutine subgrid_geom_progress_test()
+      implicit none
+
+      integer, dimension(8), parameter :: subgrid_configs = &
+         [1, 2, 3, 4, 5, 6, 7, 8]
+
+      integer :: sub_cfg
+
+      write(*, *) "Running subgrid tests"
+
+      open(io, file='results.txt', status='unknown', action='write', recl=10000)
+
+      write(io, *) "original_sor"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_geom_progress_subgrid_test(subgrid_solver_method = original_sor, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      write(io, *) "tiling_sor_1"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_geom_progress_subgrid_test(subgrid_solver_method = tiling_sor_1, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      write(io, *) "tiling_sor_2"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_geom_progress_subgrid_test(subgrid_solver_method = tiling_sor_2, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      write(io, *) "tiling_sor_4"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_geom_progress_subgrid_test(subgrid_solver_method = tiling_sor_4, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      write(io, *) "tiling_sor_8"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_geom_progress_subgrid_test(subgrid_solver_method = tiling_sor_8, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      write(io, *) "tiling_sor_16"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_geom_progress_subgrid_test(subgrid_solver_method = tiling_sor_16, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      write(io, *) "subtiling_sor_1"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_geom_progress_subgrid_test(subgrid_solver_method = subtiling_sor_1, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      write(io, *) "subtiling_sor_2"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_geom_progress_subgrid_test(subgrid_solver_method = subtiling_sor_2, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      write(io, *) "subtiling_sor_4"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_geom_progress_subgrid_test(subgrid_solver_method = subtiling_sor_4, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      write(io, *) "subtiling_sor_8"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_subgrid_test(subgrid_solver_method = subtiling_sor_8, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      write(io, *) "subtiling_sor_16"
+      do sub_cfg = 1, size(subgrid_configs)
+         call run_geom_progress_subgrid_test(subgrid_solver_method = subtiling_sor_16, &
+            subgrid_size_idx = subgrid_configs(sub_cfg))
+      end do
+      write(io, *) " "
+
+      close(io)
+
+      write(*, *) "End of subgrid tests"
+   end subroutine subgrid_geom_progress_test
+
    subroutine macrogrid_test()
       implicit none
 
-      integer, dimension(5), parameter :: subgrid_configs = &
-         [1, 2, 3, 4, 5]
+      integer, dimension(4), parameter :: subgrid_configs = &
+         [1, 2, 3, 4]
 
-      integer, dimension(2), parameter :: macrogrid_configs = &
-         [2, 4]
+      integer, dimension(1), parameter :: macrogrid_configs = &
+         [2]
 
       integer :: mac_cfg, sub_cfg
 
@@ -212,14 +250,9 @@ contains
       write(io, *) "sor_fixed_omega"
       do mac_cfg = 1, size(macrogrid_configs)
          do sub_cfg = 1, size(subgrid_configs)
-
             call run_macrogrid_test(use_openmp = .false., &
                macrogrid_solver_method = sor_fixed_omega, subgrid_solver_method = original_sor, &
-               eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
-               max_iter_interface = 100000, max_iter_subgrid = 100000, &
-               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg))
          end do
       end do
       write(io, *) " "
@@ -227,14 +260,9 @@ contains
       write(io, *) "sor_fixed_omega & one_iter"
       do mac_cfg = 1, size(macrogrid_configs)
          do sub_cfg = 1, size(subgrid_configs)
-
             call run_macrogrid_test(use_openmp = .false., &
-               macrogrid_solver_method = sor_fixed_omega, subgrid_solver_method = original_sor, &
-               eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
-               max_iter_interface = 100000, max_iter_subgrid = 1, &
-               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+               macrogrid_solver_method = sor_fixed_omega_one_iter, subgrid_solver_method = original_sor, &
+               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg))
          end do
       end do
       write(io, *) " "
@@ -242,14 +270,9 @@ contains
       write(io, *) "sor_fixed_omega & one_iter & tiling_sor"
       do mac_cfg = 1, size(macrogrid_configs)
          do sub_cfg = 1, size(subgrid_configs)
-
             call run_macrogrid_test(use_openmp = .false., &
-               macrogrid_solver_method = sor_fixed_omega, subgrid_solver_method = tiling_sor, &
-               eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
-               max_iter_interface = 100000, max_iter_subgrid = 1, &
-               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+               macrogrid_solver_method = sor_fixed_omega_one_iter, subgrid_solver_method = tiling_sor_8, &
+               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg))
          end do
       end do
       write(io, *) " "
@@ -257,14 +280,9 @@ contains
       write(io, *) "sor_fixed_omega & one_iter & tiling_sor & openmp"
       do mac_cfg = 1, size(macrogrid_configs)
          do sub_cfg = 1, size(subgrid_configs)
-
             call run_macrogrid_test(use_openmp = .true., &
-               macrogrid_solver_method = sor_fixed_omega, subgrid_solver_method = tiling_sor, &
-               eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
-               max_iter_interface = 100000, max_iter_subgrid = 1, &
-               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+               macrogrid_solver_method = sor_fixed_omega_one_iter, subgrid_solver_method = tiling_sor_8, &
+               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg))
          end do
       end do
       write(io, *) " "
@@ -272,14 +290,9 @@ contains
       write(io, *) "conjugate_residuals"
       do mac_cfg = 1, size(macrogrid_configs)
          do sub_cfg = 1, size(subgrid_configs)
-
             call run_macrogrid_test(use_openmp = .false., &
                macrogrid_solver_method = conjugate_residuals, subgrid_solver_method = original_sor, &
-               eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
-               max_iter_interface = 100000, max_iter_subgrid = 100000, &
-               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg))
          end do
       end do
       write(io, *) " "
@@ -287,14 +300,9 @@ contains
       write(io, *) "conjugate_residuals & tiling_sor"
       do mac_cfg = 1, size(macrogrid_configs)
          do sub_cfg = 1, size(subgrid_configs)
-
             call run_macrogrid_test(use_openmp = .false., &
-               macrogrid_solver_method = conjugate_residuals, subgrid_solver_method = tiling_sor, &
-               eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
-               max_iter_interface = 100000, max_iter_subgrid = 100000, &
-               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+               macrogrid_solver_method = conjugate_residuals, subgrid_solver_method = tiling_sor_8, &
+               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg))
          end do
       end do
       write(io, *) " "
@@ -302,14 +310,9 @@ contains
       write(io, *) "conjugate_residuals & subtiling_sor"
       do mac_cfg = 1, size(macrogrid_configs)
          do sub_cfg = 1, size(subgrid_configs)
-
             call run_macrogrid_test(use_openmp = .false., &
                macrogrid_solver_method = conjugate_residuals, subgrid_solver_method = subtiling_sor_4, &
-               eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
-               max_iter_interface = 100000, max_iter_subgrid = 100000, &
-               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg))
          end do
       end do
       write(io, *) " "
@@ -317,14 +320,9 @@ contains
       write(io, *) "conjugate_residuals & subtiling_sor & openmp"
       do mac_cfg = 1, size(macrogrid_configs)
          do sub_cfg = 1, size(subgrid_configs)
-
             call run_macrogrid_test(use_openmp = .true., &
                macrogrid_solver_method = conjugate_residuals, subgrid_solver_method = subtiling_sor_4, &
-               eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, &
-               max_iter_interface = 100000, max_iter_subgrid = 100000, &
-               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg), &
-               tile_size = optimal_tile_size, subtile_level = optimal_tile_size)
-
+               macrogrid_size_idx = macrogrid_configs(mac_cfg), subgrid_size_idx = subgrid_configs(sub_cfg))
          end do
       end do
       write(io, *) " "
@@ -334,20 +332,18 @@ contains
       write(*, *) "End of macrogrid tests"
    end subroutine macrogrid_test
 
-   subroutine run_subgrid_test(subgrid_solver_method, &
-      eps_subgrid, max_iter_subgrid, &
-      subgrid_size_idx, tile_size, subtile_level)
+   subroutine run_subgrid_test(subgrid_solver_method, subgrid_size_idx)
       implicit none
       procedure(i_subgrid_solver_method) :: subgrid_solver_method
       integer, intent(in) :: subgrid_size_idx
-      integer, intent(in) :: tile_size, subtile_level
-      real*8, intent(in) :: eps_subgrid
-      integer, intent(in) :: max_iter_subgrid
 
       real*8, allocatable :: subgrid(:)
 
       real*8 :: error, time, sum_time
       integer :: iter, i
+
+      call set_default_subgrid_solver_settings()
+      call set_subgrid_solver_settings(new_omega = subgrid_omegas(subgrid_size_idx))
 
       allocate(subgrid(subgrid_sizes(subgrid_size_idx)*subgrid_sizes(subgrid_size_idx)))
 
@@ -357,18 +353,15 @@ contains
 
          call initialize_subgrid_boundary(subgrid, subgrid_sizes(subgrid_size_idx))
 
-         call configure_subgrid_solver(eps_subgrid, max_iter_subgrid, &
-            subgrid_omegas(subgrid_size_idx), tile_size, subtile_level)
-
          call run_subgrid_solver(subgrid, subgrid_sizes(subgrid_size_idx), subgrid_solver_method)
 
          call get_subgrid_solver_results(time, iter)
 
-         call compute_subgrid_boundary_error(subgrid, subgrid_sizes(subgrid_size_idx), error)
-
          sum_time = sum_time + time
 
       end do
+
+      call compute_subgrid_boundary_error(subgrid, subgrid_sizes(subgrid_size_idx), error)
 
       time = sum_time / real(subgrid_repeats_count(subgrid_size_idx))
 
@@ -379,34 +372,81 @@ contains
 
    end subroutine run_subgrid_test
 
+   subroutine run_geom_progress_subgrid_test(subgrid_solver_method, subgrid_size_idx)
+      implicit none
+      procedure(i_subgrid_solver_method) :: subgrid_solver_method
+      integer, intent(in) :: subgrid_size_idx
+
+      real*8, allocatable :: subgrid(:)
+
+      real*8 :: error, time, time_k, sum_time
+      integer :: iter, iter_k, i, k, l
+
+      call set_default_subgrid_solver_settings()
+      call set_subgrid_solver_settings(new_omega = subgrid_omegas(subgrid_size_idx))
+
+      allocate(subgrid(subgrid_sizes(subgrid_size_idx)*subgrid_sizes(subgrid_size_idx)))
+
+      call get_max_geom_progress_nummber(k)
+      sum_time = 0.0d0
+
+      do i = 1, subgrid_repeats_count(subgrid_size_idx) / 10
+
+         call initialize_zero_subgrid(subgrid, subgrid_sizes(subgrid_size_idx))
+       
+         time = 0.0d0
+         iter = 0
+
+         do l = 1, k
+         
+            call initialize_geom_progress_subgrid_boundary(subgrid, subgrid_sizes(subgrid_size_idx), k)
+
+            call run_subgrid_solver(subgrid, subgrid_sizes(subgrid_size_idx), subgrid_solver_method)
+   
+            call get_subgrid_solver_results(time_k, iter_k)
+   
+            time = time + time_k
+            iter = iter + iter_k
+
+         end do
+         
+         sum_time = sum_time + time
+
+      end do
+
+      call compute_geom_progress_subgrid_boundary_error(subgrid, subgrid_sizes(subgrid_size_idx), k, error)
+
+      time = sum_time / real(subgrid_repeats_count(subgrid_size_idx) / 10)
+
+      write(io,*) "Subgrid_size&Error&Run_time&Iterations#", &
+         subgrid_sizes(subgrid_size_idx), "&", error, "&", time, "&", iter
+
+      deallocate(subgrid)
+
+   end subroutine run_geom_progress_subgrid_test
+
    subroutine run_macrogrid_test(use_openmp, macrogrid_solver_method, subgrid_solver_method, &
-      eps_subgrid, eps_interface, max_iter_interface, max_iter_subgrid, &
-      macrogrid_size_idx, subgrid_size_idx, tile_size, subtile_level)
+      macrogrid_size_idx, subgrid_size_idx)
       implicit none
       procedure(i_macrogrid_solver_method) :: macrogrid_solver_method
       procedure(i_subgrid_solver_method) :: subgrid_solver_method
       logical, intent(in) :: use_openmp
       integer, intent(in) :: macrogrid_size_idx, subgrid_size_idx
-      integer, intent(in) :: tile_size, subtile_level
-      real*8, intent(in) :: eps_subgrid, eps_interface
-      integer, intent(in) :: max_iter_interface, max_iter_subgrid
 
       real*8, allocatable :: macrogrid(:, :, :, :)
 
       real*8 :: error, time
       integer :: iter
 
+      call set_default_macrogrid_solver_settings()
+      call set_subgrid_solver_settings(new_omega = subgrid_omegas(subgrid_size_idx))
+      call set_macrogrid_solver_settings(new_omega = macrogrid_omegas(macrogrid_size_idx, subgrid_size_idx))
+
       allocate(macrogrid(macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
          subgrid_sizes(subgrid_size_idx), subgrid_sizes(subgrid_size_idx)))
 
       call initialize_macrogrid_boundary(macrogrid, &
          macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), subgrid_sizes(subgrid_size_idx))
-
-      call configure_subgrid_solver(eps_subgrid, max_iter_subgrid, &
-         subgrid_omegas(subgrid_size_idx), tile_size, subtile_level)
-
-      call configure_macrogrid_solver(eps_interface, max_iter_interface, &
-         macrogrid_omegas(macrogrid_size_idx, subgrid_size_idx))
 
       call run_macrogrid_solver(use_openmp, macrogrid, &
          macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
@@ -431,7 +471,6 @@ contains
       integer, intent(in) :: macrogrid_size_idx, subgrid_size_idx
       real*8, intent(out) :: macrogrid_omega
 
-      integer :: tile_size = optimal_tile_size, subtile_level = optimal_tile_size
       real*8 :: eps_subgrid = 1.0d-8, eps_interface = 1.0d-8, eps_golden = 1.0d-5
       integer :: max_iter_interface = 100000, max_iter_subgrid = 1
 
@@ -441,6 +480,9 @@ contains
       integer :: iter,iter1,iter2
 
       real*8 :: k, a, b, wa, wb
+
+      call set_default_macrogrid_solver_settings()
+      call set_subgrid_solver_settings(new_omega = subgrid_omegas(subgrid_size_idx))
 
       k = 0.6180339887d0
       a = 1.0d0
@@ -464,10 +506,7 @@ contains
 
          call initialize_macrogrid_boundary(macrogrid, &
             macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), subgrid_sizes(subgrid_size_idx))
-         call configure_subgrid_solver(eps_subgrid, max_iter_subgrid, &
-            subgrid_omegas(subgrid_size_idx), tile_size, subtile_level)
-         call configure_macrogrid_solver(eps_interface, max_iter_interface, &
-            wa)
+         call set_macrogrid_solver_settings(new_omega = wa)
          call run_macrogrid_solver(.false., macrogrid, macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
             subgrid_sizes(subgrid_size_idx), sor_fixed_omega, tiling_sor)
          call get_macrogrid_solver_results(time, iter)
@@ -478,10 +517,7 @@ contains
 
          call initialize_macrogrid_boundary(macrogrid, &
             macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), subgrid_sizes(subgrid_size_idx))
-         call configure_subgrid_solver(eps_subgrid, max_iter_subgrid, &
-            subgrid_omegas(subgrid_size_idx), tile_size, subtile_level)
-         call configure_macrogrid_solver(eps_interface, max_iter_interface, &
-            wb)
+         call set_macrogrid_solver_settings(new_omega = wb)
          call run_macrogrid_solver(.false., macrogrid, macrogrid_sizes(macrogrid_size_idx), macrogrid_sizes(macrogrid_size_idx), &
             subgrid_sizes(subgrid_size_idx), sor_fixed_omega, tiling_sor)
          call get_macrogrid_solver_results(time, iter)

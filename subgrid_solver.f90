@@ -11,10 +11,17 @@ module subgrid_solver
    end interface
 
    public :: i_subgrid_solver_method
-   public :: configure_subgrid_solver, run_subgrid_solver, get_subgrid_solver_results
+   public :: set_subgrid_solver_settings, set_default_subgrid_solver_settings
+   public :: get_subgrid_solver_settings, get_subgrid_solver_results
+   public :: run_subgrid_solver
 
    public :: original_sor
    public :: tiling_sor
+   public :: tiling_sor_1
+   public :: tiling_sor_2
+   public :: tiling_sor_4
+   public :: tiling_sor_8
+   public :: tiling_sor_16
    public :: subtiling_sor
    public :: subtiling_sor_test_version
    public :: subtiling_sor_1
@@ -32,19 +39,43 @@ module subgrid_solver
 
 contains
 
-   subroutine configure_subgrid_solver(new_eps, new_max_iter, new_omega, new_tile_size, new_subtile_level)
+   subroutine set_default_subgrid_solver_settings()
       implicit none
-      real*8, intent(in) :: new_eps, new_omega
-      integer, intent(in) :: new_max_iter, new_tile_size, new_subtile_level
 
-      eps = new_eps
-      max_iter = new_max_iter
-      omega = new_omega
-      tile_size = new_tile_size
-      subtile_level = new_subtile_level
+      eps = 1.0d-8
+      max_iter = 100000
+      omega = -1
+      tile_size = -1
+      subtile_level = -1
 
-   end subroutine configure_subgrid_solver
+   end subroutine set_default_subgrid_solver_settings
 
+   subroutine set_subgrid_solver_settings(new_eps, new_max_iter, new_omega, new_tile_size, new_subtile_level)
+     implicit none
+     real*8, intent(in), optional :: new_eps, new_omega
+     integer, intent(in), optional :: new_max_iter, new_tile_size, new_subtile_level
+ 
+     if (present(new_eps)) eps = new_eps
+     if (present(new_max_iter)) max_iter = new_max_iter
+     if (present(new_omega)) omega = new_omega
+     if (present(new_tile_size)) tile_size = new_tile_size
+     if (present(new_subtile_level)) subtile_level = new_subtile_level
+ 
+   end subroutine set_subgrid_solver_settings
+
+   subroutine get_subgrid_solver_settings(new_eps, new_max_iter, new_omega, new_tile_size, new_subtile_level)
+      implicit none
+      real*8, intent(out), optional :: new_eps, new_omega
+      integer, intent(out), optional :: new_max_iter, new_tile_size, new_subtile_level
+  
+      if (present(new_eps)) new_eps = eps
+      if (present(new_max_iter)) new_max_iter = max_iter
+      if (present(new_omega)) new_omega = omega
+      if (present(new_tile_size)) new_tile_size = tile_size
+      if (present(new_subtile_level)) new_subtile_level = subtile_level
+  
+    end subroutine get_subgrid_solver_settings
+ 
    subroutine run_subgrid_solver(new_subgrid, new_subgrid_size, new_subgrid_solver_method)
       implicit none
       integer, intent(in) :: new_subgrid_size
@@ -147,6 +178,236 @@ contains
       end do
 
    end subroutine tiling_sor
+
+   subroutine tiling_sor_1(u, u_size)
+      implicit none
+      integer, intent(in) :: u_size
+      real*8, intent(inout) :: u(u_size*u_size)
+
+      integer, parameter :: tile_size_param = 1
+      integer :: i, l0, l1, l2, l3, tile_count
+      real*8 :: error, f0, f1, u_old
+
+      if (u_size <= tile_size_param) return
+
+      error = eps + 1.0d0
+      tile_count = (u_size - 2)/tile_size_param
+      f0 = 1.0d0 - omega
+      f1 = omega * 0.25d0
+
+      iter = 0
+
+      do while (error > eps .and. iter < max_iter)
+
+         i = u_size + 2
+         error = 0.0d0
+
+         do l3 = 1, tile_count
+            do l2 = 1, tile_count
+               do l1 = 1, tile_size_param
+                  do l0 = 1, tile_size_param
+
+                     u_old = u(i)
+                     u(i) = f0*u_old + f1*(u(i-1) + u(i+1) + u(i-u_size) + u(i+u_size))
+
+                     error = error + abs(u(i) - u_old)
+                     i = i + 1
+
+                  end do
+                  i = i + u_size - tile_size_param
+               end do
+               i = i - tile_size_param*(u_size - 1)
+            end do
+            i = i + u_size*(tile_size_param - 1) + 2
+         end do
+         iter = iter + 1
+      end do
+
+   end subroutine tiling_sor_1
+
+   subroutine tiling_sor_2(u, u_size)
+      implicit none
+      integer, intent(in) :: u_size
+      real*8, intent(inout) :: u(u_size*u_size)
+
+      integer, parameter :: tile_size_param = 2
+      integer :: i, l0, l1, l2, l3, tile_count
+      real*8 :: error, f0, f1, u_old
+
+      if (u_size <= tile_size_param) return
+
+      error = eps + 1.0d0
+      tile_count = (u_size - 2)/tile_size_param
+      f0 = 1.0d0 - omega
+      f1 = omega * 0.25d0
+
+      iter = 0
+
+      do while (error > eps .and. iter < max_iter)
+
+         i = u_size + 2
+         error = 0.0d0
+
+         do l3 = 1, tile_count
+            do l2 = 1, tile_count
+               do l1 = 1, tile_size_param
+                  do l0 = 1, tile_size_param
+
+                     u_old = u(i)
+                     u(i) = f0*u_old + f1*(u(i-1) + u(i+1) + u(i-u_size) + u(i+u_size))
+
+                     error = error + abs(u(i) - u_old)
+                     i = i + 1
+
+                  end do
+                  i = i + u_size - tile_size_param
+               end do
+               i = i - tile_size_param*(u_size - 1)
+            end do
+            i = i + u_size*(tile_size_param - 1) + 2
+         end do
+         iter = iter + 1
+      end do
+
+   end subroutine tiling_sor_2
+
+   subroutine tiling_sor_4(u, u_size)
+      implicit none
+      integer, intent(in) :: u_size
+      real*8, intent(inout) :: u(u_size*u_size)
+
+      integer, parameter :: tile_size_param = 4
+      integer :: i, l0, l1, l2, l3, tile_count
+      real*8 :: error, f0, f1, u_old
+
+      if (u_size <= tile_size_param) return
+
+      error = eps + 1.0d0
+      tile_count = (u_size - 2)/tile_size_param
+      f0 = 1.0d0 - omega
+      f1 = omega * 0.25d0
+
+      iter = 0
+
+      do while (error > eps .and. iter < max_iter)
+
+         i = u_size + 2
+         error = 0.0d0
+
+         do l3 = 1, tile_count
+            do l2 = 1, tile_count
+               do l1 = 1, tile_size_param
+                  do l0 = 1, tile_size_param
+
+                     u_old = u(i)
+                     u(i) = f0*u_old + f1*(u(i-1) + u(i+1) + u(i-u_size) + u(i+u_size))
+
+                     error = error + abs(u(i) - u_old)
+                     i = i + 1
+
+                  end do
+                  i = i + u_size - tile_size_param
+               end do
+               i = i - tile_size_param*(u_size - 1)
+            end do
+            i = i + u_size*(tile_size_param - 1) + 2
+         end do
+         iter = iter + 1
+      end do
+
+   end subroutine tiling_sor_4
+
+   subroutine tiling_sor_8(u, u_size)
+      implicit none
+      integer, intent(in) :: u_size
+      real*8, intent(inout) :: u(u_size*u_size)
+
+      integer, parameter :: tile_size_param = 8
+      integer :: i, l0, l1, l2, l3, tile_count
+      real*8 :: error, f0, f1, u_old
+
+      if (u_size <= tile_size_param) return
+
+      error = eps + 1.0d0
+      tile_count = (u_size - 2)/tile_size_param
+      f0 = 1.0d0 - omega
+      f1 = omega * 0.25d0
+
+      iter = 0
+
+      do while (error > eps .and. iter < max_iter)
+
+         i = u_size + 2
+         error = 0.0d0
+
+         do l3 = 1, tile_count
+            do l2 = 1, tile_count
+               do l1 = 1, tile_size_param
+                  do l0 = 1, tile_size_param
+
+                     u_old = u(i)
+                     u(i) = f0*u_old + f1*(u(i-1) + u(i+1) + u(i-u_size) + u(i+u_size))
+
+                     error = error + abs(u(i) - u_old)
+                     i = i + 1
+
+                  end do
+                  i = i + u_size - tile_size_param
+               end do
+               i = i - tile_size_param*(u_size - 1)
+            end do
+            i = i + u_size*(tile_size_param - 1) + 2
+         end do
+         iter = iter + 1
+      end do
+
+   end subroutine tiling_sor_8
+
+   subroutine tiling_sor_16(u, u_size)
+      implicit none
+      integer, intent(in) :: u_size
+      real*8, intent(inout) :: u(u_size*u_size)
+
+      integer, parameter :: tile_size_param = 16
+      integer :: i, l0, l1, l2, l3, tile_count
+      real*8 :: error, f0, f1, u_old
+
+      if (u_size <= tile_size_param) return
+
+      error = eps + 1.0d0
+      tile_count = (u_size - 2)/tile_size_param
+      f0 = 1.0d0 - omega
+      f1 = omega * 0.25d0
+
+      iter = 0
+
+      do while (error > eps .and. iter < max_iter)
+
+         i = u_size + 2
+         error = 0.0d0
+
+         do l3 = 1, tile_count
+            do l2 = 1, tile_count
+               do l1 = 1, tile_size_param
+                  do l0 = 1, tile_size_param
+
+                     u_old = u(i)
+                     u(i) = f0*u_old + f1*(u(i-1) + u(i+1) + u(i-u_size) + u(i+u_size))
+
+                     error = error + abs(u(i) - u_old)
+                     i = i + 1
+
+                  end do
+                  i = i + u_size - tile_size_param
+               end do
+               i = i - tile_size_param*(u_size - 1)
+            end do
+            i = i + u_size*(tile_size_param - 1) + 2
+         end do
+         iter = iter + 1
+      end do
+
+   end subroutine tiling_sor_16
 
    subroutine subtiling_sor(u, u_size)
       implicit none
@@ -473,11 +734,14 @@ contains
       integer :: i, l0, l1, l2, l3, l4, tile_count
       real*8 :: error, f0, f1, u_old
 
+      iter = 0
+      if (u_size <= tile_size_param*2) return
+
       error = eps + 1.0d0
       tile_count = (u_size - 2)/tile_size_param
       f0 = 1.0d0 - omega
       f1 = omega * 0.25d0
-      iter = 0
+      
       do while (error > eps .and. iter < max_iter)
          i = u_size + 2
          error = 0.0d0
@@ -675,11 +939,13 @@ contains
       integer :: i, l0, l1, l2, l3, l4, tile_count
       real*8 :: error, f0, f1, u_old
 
+      iter = 0
+      if (u_size <= tile_size_param*2) return
+
       error = eps + 1.0d0
       tile_count = (u_size - 2)/tile_size_param
       f0 = 1.0d0 - omega
       f1 = omega * 0.25d0
-      iter = 0
 
       do while (error > eps .and. iter < max_iter)
          i = u_size + 2
@@ -959,11 +1225,13 @@ contains
       integer :: i, l0, l1, l2, l3, l4, tile_count
       real*8 :: error, f0, f1, u_old
 
+      iter = 0
+      if (u_size <= tile_size_param*2) return
+
       error = eps + 1.0d0
       tile_count = (u_size - 2)/tile_size_param
       f0 = 1.0d0 - omega
       f1 = omega * 0.25d0
-      iter = 0
 
       do while (error > eps .and. iter < max_iter)
          i = u_size + 2
@@ -1405,11 +1673,13 @@ contains
       integer :: i, l0, l1, l2, l3, l4, tile_count
       real*8 :: error, f0, f1, u_old
 
+      iter = 0
+      if (u_size <= tile_size_param*2) return
+
       error = eps + 1.0d0
       tile_count = (u_size - 2)/tile_size_param
       f0 = 1.0d0 - omega
       f1 = omega * 0.25d0
-      iter = 0
 
       do while (error > eps .and. iter < max_iter)
          i = u_size + 2
@@ -2175,11 +2445,13 @@ contains
       integer :: i, l0, l1, l2, l3, l4, tile_count
       real*8 :: error, f0, f1, u_old
 
+      iter = 0
+      if (u_size <= tile_size_param*2) return
+
       error = eps + 1.0d0
       tile_count = (u_size - 2)/tile_size_param
       f0 = 1.0d0 - omega
       f1 = omega * 0.25d0
-      iter = 0
 
       do while (error > eps .and. iter < max_iter)
          i = u_size + 2

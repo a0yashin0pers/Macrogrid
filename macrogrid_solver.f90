@@ -15,10 +15,15 @@ module macrogrid_solver
    end interface
 
    public :: i_macrogrid_solver_method, i_subgrid_solver_method
-   public :: run_macrogrid_solver, configure_macrogrid_solver, get_macrogrid_solver_results, get_macrogrid_omega
+   public :: set_macrogrid_solver_settings, set_default_macrogrid_solver_settings
+   public :: get_macrogrid_solver_settings, get_macrogrid_solver_results
+   public :: run_macrogrid_solver
 
    public :: simple_iteration
-   public :: sor, sor_fixed_omega
+   public :: simple_iteration_one_iter
+   public :: sor
+   public :: sor_fixed_omega
+   public :: sor_fixed_omega_one_iter
    public :: conjugate_residuals
 
    integer :: macrogrid_size_x, macrogrid_size_y, subgrid_size, max_iter
@@ -35,16 +40,38 @@ module macrogrid_solver
 
 contains
 
-   subroutine configure_macrogrid_solver(new_eps_interface, new_max_iter_interface, new_omega)
+   subroutine set_default_macrogrid_solver_settings()
       implicit none
-      real*8, intent(in) :: new_eps_interface, new_omega
-      integer, intent(in) :: new_max_iter_interface
 
-      eps = new_eps_interface
-      max_iter = new_max_iter_interface
-      omega = new_omega
+      call set_default_subgrid_solver_settings()
 
-   end subroutine configure_macrogrid_solver
+      eps = 1.0d-8
+      max_iter = 100000
+      omega = -1
+
+   end subroutine set_default_macrogrid_solver_settings
+
+   subroutine set_macrogrid_solver_settings(new_eps, new_max_iter, new_omega)
+      implicit none
+      real*8, intent(in), optional :: new_eps, new_omega
+      integer, intent(in), optional :: new_max_iter
+
+      if (present(new_eps)) eps = new_eps
+      if (present(new_max_iter)) max_iter = new_max_iter
+      if (present(new_omega)) omega = new_omega
+
+   end subroutine set_macrogrid_solver_settings
+
+   subroutine get_macrogrid_solver_settings(new_eps, new_max_iter, new_omega)
+      implicit none
+      real*8, intent(out), optional :: new_eps, new_omega
+      integer, intent(out), optional :: new_max_iter
+
+      if (present(new_eps)) new_eps = eps
+      if (present(new_max_iter)) new_max_iter = max_iter
+      if (present(new_omega)) new_omega = omega
+
+   end subroutine get_macrogrid_solver_settings
 
    subroutine run_macrogrid_solver(use_openmp, new_macrogrid, &
       new_macrogrid_size_x, new_macrogrid_size_y, new_subgrid_size, &
@@ -93,12 +120,6 @@ contains
       res_time = time
       res_iter = iter
    end subroutine get_macrogrid_solver_results
-
-   subroutine get_macrogrid_omega(res_omega)
-      implicit none
-      real*8, intent(out) :: res_omega
-      res_omega = omega
-   end subroutine get_macrogrid_omega
 
    subroutine compute_subgrids()
       implicit none
@@ -184,6 +205,17 @@ contains
       call compute_intersection_nodes()
 
    end subroutine simple_iteration
+
+   subroutine simple_iteration_one_iter()
+      implicit none
+      integer :: max_subgrid_iter
+
+      call get_subgrid_solver_settings(new_max_iter = max_subgrid_iter)
+      call set_subgrid_solver_settings(new_max_iter = 1)
+      call simple_iteration()
+      call set_subgrid_solver_settings(new_max_iter = max_subgrid_iter)
+
+   end subroutine simple_iteration_one_iter
 
    subroutine sor()
       implicit none
@@ -322,6 +354,17 @@ contains
       call compute_intersection_nodes()
 
    end subroutine sor_fixed_omega
+
+   subroutine sor_fixed_omega_one_iter()
+      implicit none
+      integer :: max_subgrid_iter
+
+      call get_subgrid_solver_settings(new_max_iter = max_subgrid_iter)
+      call set_subgrid_solver_settings(new_max_iter = 1)
+      call sor_fixed_omega()
+      call set_subgrid_solver_settings(new_max_iter = max_subgrid_iter)
+
+   end subroutine sor_fixed_omega_one_iter
 
    subroutine conjugate_residuals()
       implicit none
