@@ -1,4 +1,3 @@
-cat > submit.sh << 'EOF'
 #!/bin/bash
 #SBATCH --job-name=fortran_ifx
 #SBATCH --output=fortran_ifx.%j.out
@@ -22,4 +21,3 @@ mkdir -p build
 ifx $IFX_FLAGS -module build $FORTRAN_SOURCES -o build/main
 
 ./build/main
-EOF
