@@ -39,8 +39,8 @@ program main
    macrogrid_omegas(7,:) = macrogrid_omegas_1(:)
    macrogrid_omegas(8,:) = macrogrid_omegas_1(:)
 
-   call subgrid_test()
-   ! call subgrid_geom_progress_test()
+   ! call subgrid_test()
+   call subgrid_geom_progress_test()
 
 contains
 

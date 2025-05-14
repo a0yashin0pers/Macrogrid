@@ -97,13 +97,14 @@ contains
       integer :: l0, l1, i
       real*8 :: s
 
-      s = 1.0d0 - q**k
+      s = q**k
 
       do l1 = 1, u_size
          do l0 = 1, u_size
             i = l0 + u_size*(l1 - 1)
             if (l0.eq.1 .or. l0.eq.u_size .or. l1.eq.1 .or. l1.eq.u_size) then
-               u(i) = s
+               u(i) = log(sqrt((x_min + len*(l1 - 1)/u_size)**2 + &
+                  (y_min + len*(l0 - 1)/u_size)**2)*R2/(R1*R1))/log(R2/R1) - s
             end if
          end do
       end do
@@ -119,14 +120,15 @@ contains
       integer :: l0, l1, i
       real*8 :: s
 
-      s = 1.0d0 - q**k
+      s = q**k
       error = 0.0d0
 
       do l1 = 1, u_size
          do l0 = 1, u_size
 
             i = l0 + u_size*(l1 - 1)
-            error = max(error, abs(u(i) - s))
+            error = max(error, abs(u(i) - log(sqrt((x_min + len*(l1 - 1)/u_size)**2 + &
+               (y_min + len*(l0 - 1)/u_size)**2)*R2/(R1*R1))/log(R2/R1) + s))
 
          end do
       end do
