@@ -40,7 +40,6 @@ program main
    macrogrid_omegas(8,:) = macrogrid_omegas_1(:)
 
    call subgrid_test()
-   call subgrid_geom_progress_test()
 
 contains
 
@@ -137,100 +136,6 @@ contains
 
       write(*, *) "End of subgrid tests"
    end subroutine subgrid_test
-
-   subroutine subgrid_geom_progress_test()
-      implicit none
-
-      integer, dimension(8), parameter :: subgrid_configs = &
-         [1, 2, 3, 4, 5, 6, 7, 8]
-
-      integer :: sub_cfg
-
-      write(*, *) "Running subgrid tests"
-
-      open(io, file='results.txt', status='unknown', action='write', recl=10000)
-
-      write(io, *) "original_sor"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_geom_progress_subgrid_test(subgrid_solver_method = original_sor, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      write(io, *) "tiling_sor_1"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_geom_progress_subgrid_test(subgrid_solver_method = tiling_sor_1, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      write(io, *) "tiling_sor_2"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_geom_progress_subgrid_test(subgrid_solver_method = tiling_sor_2, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      write(io, *) "tiling_sor_4"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_geom_progress_subgrid_test(subgrid_solver_method = tiling_sor_4, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      write(io, *) "tiling_sor_8"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_geom_progress_subgrid_test(subgrid_solver_method = tiling_sor_8, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      write(io, *) "tiling_sor_16"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_geom_progress_subgrid_test(subgrid_solver_method = tiling_sor_16, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      write(io, *) "subtiling_sor_1"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_geom_progress_subgrid_test(subgrid_solver_method = subtiling_sor_1, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      write(io, *) "subtiling_sor_2"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_geom_progress_subgrid_test(subgrid_solver_method = subtiling_sor_2, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      write(io, *) "subtiling_sor_4"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_geom_progress_subgrid_test(subgrid_solver_method = subtiling_sor_4, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      write(io, *) "subtiling_sor_8"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_subgrid_test(subgrid_solver_method = subtiling_sor_8, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      write(io, *) "subtiling_sor_16"
-      do sub_cfg = 1, size(subgrid_configs)
-         call run_geom_progress_subgrid_test(subgrid_solver_method = subtiling_sor_16, &
-            subgrid_size_idx = subgrid_configs(sub_cfg))
-      end do
-      write(io, *) " "
-
-      close(io)
-
-      write(*, *) "End of subgrid tests"
-   end subroutine subgrid_geom_progress_test
 
    subroutine macrogrid_test()
       implicit none
@@ -343,7 +248,7 @@ contains
       integer :: iter, i
 
       call set_default_subgrid_solver_settings()
-      call set_subgrid_solver_settings(new_omega = subgrid_omegas(subgrid_size_idx))
+      call set_subgrid_solver_settings(new_omega = subgrid_omegas(subgrid_size_idx), new_eps = 1.0d-5)
 
       allocate(subgrid(subgrid_sizes(subgrid_size_idx)*subgrid_sizes(subgrid_size_idx)))
 
@@ -371,59 +276,6 @@ contains
       deallocate(subgrid)
 
    end subroutine run_subgrid_test
-
-   subroutine run_geom_progress_subgrid_test(subgrid_solver_method, subgrid_size_idx)
-      implicit none
-      procedure(i_subgrid_solver_method) :: subgrid_solver_method
-      integer, intent(in) :: subgrid_size_idx
-
-      real*8, allocatable :: subgrid(:)
-
-      real*8 :: error, time, time_k, sum_time
-      integer :: iter, iter_k, i, k, l
-
-      call set_default_subgrid_solver_settings()
-      call set_subgrid_solver_settings(new_omega = subgrid_omegas(subgrid_size_idx))
-
-      allocate(subgrid(subgrid_sizes(subgrid_size_idx)*subgrid_sizes(subgrid_size_idx)))
-
-      call get_max_geom_progress_nummber(k)
-      sum_time = 0.0d0
-
-      do i = 1, subgrid_repeats_count(subgrid_size_idx) / 10
-
-         call initialize_zero_subgrid(subgrid, subgrid_sizes(subgrid_size_idx))
-       
-         time = 0.0d0
-         iter = 0
-
-         do l = 1, k
-         
-            call initialize_geom_progress_subgrid_boundary(subgrid, subgrid_sizes(subgrid_size_idx), k)
-
-            call run_subgrid_solver(subgrid, subgrid_sizes(subgrid_size_idx), subgrid_solver_method)
-   
-            call get_subgrid_solver_results(time_k, iter_k)
-   
-            time = time + time_k
-            iter = iter + iter_k
-
-         end do
-         
-         sum_time = sum_time + time
-
-      end do
-
-      call compute_geom_progress_subgrid_boundary_error(subgrid, subgrid_sizes(subgrid_size_idx), k, error)
-
-      time = sum_time / real(subgrid_repeats_count(subgrid_size_idx) / 10)
-
-      write(io,*) "Subgrid_size&Error&Run_time&Iterations#", &
-         subgrid_sizes(subgrid_size_idx), "&", error, "&", time, "&", iter
-
-      deallocate(subgrid)
-
-   end subroutine run_geom_progress_subgrid_test
 
    subroutine run_macrogrid_test(use_openmp, macrogrid_solver_method, subgrid_solver_method, &
       macrogrid_size_idx, subgrid_size_idx)
